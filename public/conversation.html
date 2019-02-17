@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+  <meta charset="utf-8">
+  <title> Conversation </title>
+
+  <!-- Bootstrap CSS -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
+    integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css"
+    integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+
+  <script>
+    function viewRenderingSearch(data) {
+      $("#search-result").append("<div>" + data.action + "</div>");
+      $("#search-result").append("<pre><code style=\"color: #0059b3\">" + data.log + "</code></pre><br>");
+    }
+
+    $(function controller() {
+      $("#btn-click").click(function () {
+        var action = $('#action').val();
+        if (action) {
+          $.post("/conversation", { action: action }, function (result) {
+            viewRenderingSearch(result);
+          });
+        }
+      });
+    });
+  </script>
+
+</head>
+
+<body>
+  <div class="container-fluid">
+    <h1 class="mb-4">Open a site with an URL and then write an action</h1>
+    <div class="input-group" id="search-form">
+      <input type="text" class="form-control" name="action" id="action">
+      <div class="input-group-append" id="button-addon4">
+        <button class="btn btn-outline-secondary" type="button" id="btn-click">Inserisci</button>
+      </div>
+    </div>
+    <div id="search-result" class="mt-4">
+
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js"
+    integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut"
+    crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js"
+    integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k"
+    crossorigin="anonymous"></script>
+
+</body>
+
+</html>
