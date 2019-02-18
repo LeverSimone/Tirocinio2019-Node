@@ -14,22 +14,18 @@
     integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
 
   <script>
-
-    function viewCleaning() {
-      document.getElementById("search-result").innerHTML = "";
-    }
-
     function viewRenderingSearch(data) {
-      //viewCleaning();
       $("#search-result").append("<div>" + data.action + "<div>");
     }
 
     $(function controller() {
       $("#btn-click").click(function () {
         var action = $('#action').val();
-        $.post("http://localhost:3000/conversation", { action: action }, function (result) {
-          viewRenderingSearch(result);
-        });
+        if (action) {
+          $.post("http://localhost:3000/conversation", { action: action }, function (result) {
+            viewRenderingSearch(result);
+          });
+        }
       });
     });
   </script>
