@@ -22,8 +22,7 @@
       $("#btn-click").click(function () {
         var action = $('#action').val();
         if (action) {
-          //$.post("http://localhost:3000/conversation", { action: action }, function (result) {
-          $.post("https://tirocinio2019-node.herokuapp.com/conversation", { action: action }, function (result) {
+          $.post("/conversation", { action: action }, function (result) {
             viewRenderingSearch(result);
           });
         }
