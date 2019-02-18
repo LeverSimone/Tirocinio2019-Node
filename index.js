@@ -27,10 +27,11 @@ app.post('/conversation', async (req, res) => {
                 let result = await MY_FUNCTIONS.post(objToPuppetteer, GLOBAL_SETTINGS.DESTINATION_URL_PUPPETEER + "/opensite", 'application/json');
                 structureBotify = await result.json();
 
-                //console.log(structureBotify);
+                console.log(structureBotify);
 
                 res.json(resultToSend);
             } catch (error) {
+                console.log(error)
                 res.status(500).send(error);
             }
         }
