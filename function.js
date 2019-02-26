@@ -24,6 +24,9 @@ async function askRasa(action) {
             intentRasa.resource = resRasa.entities[0].value;
         }
 
+        //Debugging Frontend
+        intentRasa.log = resRasa;
+        
         return intentRasa;
 
     } catch (error) {
@@ -35,17 +38,16 @@ async function askRasa(action) {
 async function openSite(req, action) {
     let structureBotify = [];
     let objToPuppetteer = { site: action };
-    let resultToSend = { action: "Site opened: " + action };
+
     try {
         let result = await post(objToPuppetteer, GLOBAL_SETTINGS.DESTINATION_URL_PUPPETEER + "/opensite", 'application/json');
         structureBotify = await result.json();
 
+        //salvo in sessione la struttura del sito
         req.session.context = undefined;
         req.session.site = structureBotify;
 
-        //console.log("req.session.site:")
-        //console.log(req.session.site);
-
+        let resultToSend = { action: "Site opened: " + action };
         return resultToSend;
     } catch (error) {
         console.log(error);
@@ -66,7 +68,7 @@ function validator(structureBotify, intentRasa, req) {
     for (let i = 0; i < structureBotify.length; i++) {
         if (structureBotify[i].intent == intent) {
             //conto quanti component come quelli su cui vuole lavorare l'utente ci sono
-            if(i<(structureBotify.length -1) && structureBotify[i].intent!=structureBotify[i+1].intent) {
+            if (i < (structureBotify.length - 1) && structureBotify[i].intent != structureBotify[i + 1].intent) {
                 intentFound++;
                 oneIntentResource = structureBotify[i].resource;
             }

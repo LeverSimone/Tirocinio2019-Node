@@ -28,34 +28,41 @@ app.post('/conversation', async (req, res) => {
     if (body.action) {
         //L'azione inserita è un sito
         if (body.action.includes('http')) {
+            //salvo in sessione la struttura del sito restituita da Puppeteer
             let resultToSend = await MY_FUNCTIONS.openSite(req, body.action);
-            if(resultToSend.error)
-            {
+            if (resultToSend.error) {
                 res.status(500).send(resultToSend.error);
             } else {
+
+                //Debugging Frontend
+                resultToSend.log = JSON.stringify(req.session.site.structure, null, " ");
+
                 res.json(resultToSend);
             }
         }
         //è un'altro tipo di azione, chiedo a Rasa
         else if (req.session.site) {
+            let responseToSend = {};
             let intentRasa = await MY_FUNCTIONS.askRasa(body.action);
+
+            //Debugging Frontend
+            responseToSend.log = JSON.stringify(intentRasa.log, null, " ");
+
             if (intentRasa.error) {
                 res.status(500).send(intentRasa.error);
             }
             else {
-                //console.log("intentRasa:")
-                //console.log(intentRasa);
 
                 //prendo/setto resource in sessione
-                if (!intentRasa.resource) { 
+                if (!intentRasa.resource) {
                     intentRasa.resource = req.session.context;
                 } else {
                     req.session.context = intentRasa.resource;
                 }
 
-                responseToSend = MY_FUNCTIONS.validator(req.session.site.structure, intentRasa, req);
-                //console.log(responseToSend);
-                res.json({ action: responseToSend });
+                responseToSend.action = MY_FUNCTIONS.validator(req.session.site.structure, intentRasa, req);
+
+                res.json(responseToSend);
             }
         }
         else {
