@@ -12,29 +12,6 @@ function post(object, url, type) {
     })
 }
 
-async function askRasa(action) {
-    let objectForRasa = { q: action, project: "components" };
-
-    //chiediamo a Rasa di restituire intent, resources
-    try {
-        let reqRasa = await post(objectForRasa, GLOBAL_SETTINGS.DESTINATION_URL_RASA + "/parse", 'application/x-yml');
-        let resRasa = await reqRasa.json();
-        let intentRasa = { intent: resRasa.intent.name }
-        if (resRasa.entities[0]) {
-            intentRasa.resource = resRasa.entities[0].value;
-        }
-
-        //Debugging Frontend
-        intentRasa.log = resRasa;
-        
-        return intentRasa;
-
-    } catch (error) {
-        console.log(error);
-        return ({ error: error })
-    }
-}
-
 async function openSite(req, action) {
     let structureBotify = [];
     let objToPuppetteer = { site: action };
@@ -55,9 +32,33 @@ async function openSite(req, action) {
     }
 }
 
+async function askRasa(action) {
+    let objectForRasa = { q: action, project: "components" };
+
+    //chiediamo a Rasa di restituire intent, resources
+    try {
+        let reqRasa = await post(objectForRasa, GLOBAL_SETTINGS.DESTINATION_URL_RASA + "/parse", 'application/x-yml');
+        let resRasa = await reqRasa.json();
+        let intentRasa = { intent: resRasa.intent.name }
+        for (let i = 0; i < resRasa.entities.length; i++) {
+            intentRasa[resRasa.entities[i].entity] = resRasa.entities[i].value;
+        }
+
+        //Debugging Frontend
+        intentRasa.log = resRasa;
+
+        return intentRasa;
+
+    } catch (error) {
+        console.log(error);
+        return ({ error: error })
+    }
+}
+
 function validator(structureBotify, intentRasa, req) {
     let intentFound = 0;
     let resourceFound = false;
+    let attributeFound = false;
     let oneIntentResource = null;
 
     //prendo il componente correlato all'intent di Rasa
@@ -67,16 +68,24 @@ function validator(structureBotify, intentRasa, req) {
     //controllo se si può applicare l'intent voluto su un componente e sulla resource chiesta 
     for (let i = 0; i < structureBotify.length; i++) {
         if (structureBotify[i].intent == intent) {
-            //conto quanti component come quelli su cui vuole lavorare l'utente ci sono
-            if (i < (structureBotify.length - 1) && structureBotify[i].intent != structureBotify[i + 1].intent) {
-                intentFound++;
-                oneIntentResource = structureBotify[i].resource;
-            }
+            intentFound++;
+            oneIntentResource = structureBotify[i].resource;
+
             if (structureBotify[i].resource === intentRasa.resource && intentRasa.resource) {
-                //console.log(intentRasa.resource);
                 resourceFound = true;
+                for (let j = 0; j < structureBotify[i].attribute.length; j++) {
+                    if (structureBotify[i].attribute[j] == intentRasa.attribute) {
+                        attributeFound = true;
+                    }
+                }
             }
         }
+    }
+
+    //se ho trovato solo un component sul quale applicare un determinato intent, la resource dell'utente non è necessaria
+    if (intentFound == 1 && !intentRasa.resource) {
+        intentRasa.resource = oneIntentResource;
+        resourceFound = true;
     }
 
     //Send result
@@ -85,11 +94,7 @@ function validator(structureBotify, intentRasa, req) {
         //Non si può applicare l'intent voluto nel sito
         return "There are not " + intent + " in this site";
     } else if (intentFound && !resourceFound) {
-        if (intentFound == 1 && oneIntentResource) {
-            //é presente solo un componente su cui si può eseguire una determinata azione, resource non richiesta all'utente
-            return "Intent recognised: " + intentRasa.intent + ", resource: " + oneIntentResource;
-        }
-        else if (!intentRasa.resource) {
+        if (!intentRasa.resource) {
             //ci sono multipli component e non si ha indicato una resource su cui si vuole lavorare
             return "There are multiple resources in this site. You have to write a resource with you want to work";
         }
@@ -99,7 +104,11 @@ function validator(structureBotify, intentRasa, req) {
             return "There are not " + intentRasa.resource + " in this site";
         }
     } else {
-        return "Intent recognised: " + intentRasa.intent + ", resource: " + intentRasa.resource;
+        if(!attributeFound && intentRasa.attribute) {
+            return "Intent recognised: " + intentRasa.intent + ", resource: " + intentRasa.resource + ", but " + intentRasa.attribute + " not exist in this site";
+        } else {
+            return "Intent recognised: " + intentRasa.intent + ", resource: " + intentRasa.resource + ", attribute: " + intentRasa.attribute;
+        }
     }
 }
 

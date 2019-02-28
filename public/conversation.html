@@ -16,7 +16,9 @@
   <script>
     function viewRenderingSearch(data) {
       $("#search-result").append("<div>" + data.action + "</div>");
-      $("#search-result").append("<pre><code style=\"color: #0059b3\">" + data.log + "</code></pre><br>");
+      if (data.log) {
+        $("#search-result").append("<pre><code style=\"color: #0059b3\">" + data.log + "</code></pre><br>");
+      }
     }
 
     $(function controller() {
