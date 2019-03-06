@@ -20,34 +20,23 @@ async function openSite(req, action) {
         let result = await post(objToPuppetteer, GLOBAL_SETTINGS.DESTINATION_URL_PUPPETEER + "/opensite", 'application/json');
         structureBotify = await result.json();
 
-        //salvo in sessione la struttura del sito
+        //inizializzo/resetto sessione
         req.session.context = undefined;
-        req.session.site = structureBotify;
 
-        let resultToSend = { action: "Site opened: " + action };
-        return resultToSend;
+        return structureBotify;
     } catch (error) {
         console.log(error);
         return ({ error: error })
     }
 }
 
-async function askRasa(action) {
-    let objectForRasa = { q: action, project: "components" };
-
-    //chiediamo a Rasa di restituire intent, resources
+async function configureValidator(structureBotify) {
+    //chiediamo a Rasa di fare Validation
     try {
-        let reqRasa = await post(objectForRasa, GLOBAL_SETTINGS.DESTINATION_URL_RASA + "/parse", 'application/x-yml');
-        let resRasa = await reqRasa.json();
-        let intentRasa = { intent: resRasa.intent.name }
-        for (let i = 0; i < resRasa.entities.length; i++) {
-            intentRasa[resRasa.entities[i].entity] = resRasa.entities[i].value;
-        }
+        let result = await post(structureBotify, GLOBAL_SETTINGS.DESTINATION_URL_RASA + "/configure", 'application/json');
+        let configurationURI = await result.json();
 
-        //Debugging Frontend
-        intentRasa.log = resRasa;
-
-        return intentRasa;
+        return configurationURI;
 
     } catch (error) {
         console.log(error);
@@ -112,4 +101,4 @@ function validator(structureBotify, intentRasa, req) {
     }
 }
 
-module.exports = { post, askRasa, openSite, validator };
+module.exports = { post, configureValidator, openSite, validator };

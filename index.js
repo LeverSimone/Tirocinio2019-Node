@@ -28,16 +28,27 @@ app.post('/conversation', async (req, res) => {
     if (body.action) {
         //L'azione inserita è un sito
         if (body.action.includes('http')) {
-            //salvo in sessione la struttura del sito restituita da Puppeteer
-            let resultToSend = await MY_FUNCTIONS.openSite(req, body.action);
-            if (resultToSend.error) {
-                res.status(500).send(resultToSend.error);
+            //inizializzo session context in openSite
+            let structureBotify = await MY_FUNCTIONS.openSite(req, body.action);
+            if (structureBotify.error) {
+                res.status(500).send(structureBotify.error);
             } else {
 
-                //Debugging Frontend
-                resultToSend.log = JSON.stringify(req.session.site.structure, null, " ");
+                console.log(structureBotify);
+                let configurationURI = await MY_FUNCTIONS.configureValidator(structureBotify);
+                if (configurationURI.error) {
+                    res.status(500).send(configurationURI.error);
+                }
+                else {
+                    //salvo in sessione configurationURI
+                    req.session.configurationURI = configurationURI;
+                    
+                    let resultToSend = { action: "Site opened: " + body.action };
+                    //Debugging Frontend
+                    resultToSend.log = JSON.stringify(configurationURI, null, " ");
 
-                res.json(resultToSend);
+                    res.json(resultToSend);
+                }
             }
         }
         //è un'altro tipo di azione, chiedo a Rasa
