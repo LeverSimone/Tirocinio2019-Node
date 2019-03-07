@@ -28,13 +28,18 @@ app.post('/conversation', async (req, res) => {
     if (body.action) {
         //L'azione inserita è un sito
         if (body.action.includes('http')) {
-            //inizializzo session context in openSite
+            
+            //resetto session context
+            req.session.context = undefined;
+
+            //impariamo la struttura del sito da Botify
             let structureBotify = await MY_FUNCTIONS.openSite(req, body.action);
             if (structureBotify.error) {
                 res.status(500).send(structureBotify.error);
             } else {
 
                 console.log(structureBotify);
+                //configuriamo Rasa per sapere la struttura del sito in cui ci troviamo
                 let configurationURI = await MY_FUNCTIONS.configureValidator(structureBotify);
                 if (configurationURI.error) {
                     res.status(500).send(configurationURI.error);
@@ -42,7 +47,7 @@ app.post('/conversation', async (req, res) => {
                 else {
                     //salvo in sessione configurationURI
                     req.session.configurationURI = configurationURI;
-                    
+
                     let resultToSend = { action: "Site opened: " + body.action };
                     //Debugging Frontend
                     resultToSend.log = JSON.stringify(configurationURI, null, " ");
@@ -51,28 +56,22 @@ app.post('/conversation', async (req, res) => {
                 }
             }
         }
-        //è un'altro tipo di azione, chiedo a Rasa
-        else if (req.session.site) {
+        //è un'altro tipo di azione, un comando, ex: "list me proposals", chiamo Rasa per fare la validazione
+        else if (req.session.configurationURI) {
             let responseToSend = {};
-            let intentRasa = await MY_FUNCTIONS.askRasa(body.action);
+            console.log(body.action);
+            console.log(req.session.configurationURI);
 
-            //Debugging Frontend
-            responseToSend.log = JSON.stringify(intentRasa.log, null, " ");
+            let validation = await MY_FUNCTIONS.askValidator(body.action, req.session.configurationURI);
+            console.log(validation);
 
-            if (intentRasa.error) {
-                res.status(500).send(intentRasa.error);
+            if (validation.error) {
+                res.status(500).send(validation.error);
             }
             else {
 
-                //prendo/setto resource in sessione
-                if (!intentRasa.resource) {
-                    intentRasa.resource = req.session.context;
-                } else {
-                    req.session.context = intentRasa.resource;
-                }
-
-                responseToSend.action = MY_FUNCTIONS.validator(req.session.site.structure, intentRasa, req);
-
+                //responseToSend.action = MY_FUNCTIONS.validator(validation, req);
+                responseToSend.action = JSON.stringify(validation, null, " ");
                 res.json(responseToSend);
             }
         }

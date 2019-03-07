@@ -12,6 +12,10 @@ function post(object, url, type) {
     })
 }
 
+function get(url) {
+    return fetch(url);
+}
+
 async function openSite(req, action) {
     let structureBotify = [];
     let objToPuppetteer = { site: action };
@@ -20,18 +24,17 @@ async function openSite(req, action) {
         let result = await post(objToPuppetteer, GLOBAL_SETTINGS.DESTINATION_URL_PUPPETEER + "/opensite", 'application/json');
         structureBotify = await result.json();
 
-        //inizializzo/resetto sessione
-        req.session.context = undefined;
-
         return structureBotify;
     } catch (error) {
+        let object = ""
+        object.error = error
         console.log(error);
-        return ({ error: error })
+        return (object)
     }
 }
 
 async function configureValidator(structureBotify) {
-    //chiediamo a Rasa di fare Validation
+    //chiediamo a Rasa di imparare la struttura del sito
     try {
         let result = await post(structureBotify, GLOBAL_SETTINGS.DESTINATION_URL_RASA + "/configure", 'application/json');
         let configurationURI = await result.json();
@@ -39,12 +42,30 @@ async function configureValidator(structureBotify) {
         return configurationURI;
 
     } catch (error) {
+        let object = ""
+        object.error = error
         console.log(error);
-        return ({ error: error })
+        return (object)
     }
 }
 
-function validator(structureBotify, intentRasa, req) {
+async function askValidator(comand, configurationURI) {
+    //chiediamo a Rasa di fare Validation
+    try {
+        let result = await get(GLOBAL_SETTINGS.DESTINATION_URL_RASA +'/parse?q='+comand+'&conf='+configurationURI.id);
+        let validation = await result.json();
+
+        return validation
+
+    } catch (error) {
+        let object = ""
+        object.error = error
+        console.log(error);
+        return (object)
+    }
+}
+
+function validator(validation, req) {
     let intentFound = 0;
     let resourceFound = false;
     let attributeFound = false;
@@ -101,4 +122,4 @@ function validator(structureBotify, intentRasa, req) {
     }
 }
 
-module.exports = { post, configureValidator, openSite, validator };
+module.exports = { post, configureValidator, openSite, askValidator, validator };
