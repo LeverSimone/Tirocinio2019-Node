@@ -26,8 +26,7 @@ async function openSite(req, action) {
 
         return structureBotify;
     } catch (error) {
-        let object = ""
-        object.error = error
+        let object = {error: error}
         console.log(error);
         return (object)
     }
@@ -42,8 +41,7 @@ async function configureValidator(structureBotify) {
         return configurationURI;
 
     } catch (error) {
-        let object = ""
-        object.error = error
+        let object = {error: error}
         console.log(error);
         return (object)
     }
@@ -51,18 +49,61 @@ async function configureValidator(structureBotify) {
 
 async function askValidator(comand, configurationURI) {
     //chiediamo a Rasa di fare Validation
-    try {
+    //try {
+        console.log(configurationURI.id);
+        console.log(comand);
         let result = await get(GLOBAL_SETTINGS.DESTINATION_URL_RASA +'/parse?q='+comand+'&conf='+configurationURI.id);
         let validation = await result.json();
 
         return validation
 
-    } catch (error) {
-        let object = ""
-        object.error = error
+    /*} catch (error) {
+        let object = {error: error}
         console.log(error);
         return (object)
+    }*/
+}
+
+function newValidator(validation, req) {
+    found = {match: {intet: validation.intent.name, resources: [], attributes: []}, not_matched: {resources: [], attributes: []}}
+    //metti in found un oggetto di tipo resources/attributes e il suo valore
+    validation.matching.forEach(entities => {
+        console.log("entity: ");
+        console.log(entities);
+        if(entities.match.relation=='equal') {
+            console.log("entity.value: " + entities.entity.value);
+            entities.entity.entity=='resources' ? found.match.resources.push(entities.entity.value) : found.match.attributes.push(entities.entity.value);
+        }
+        else if(entities.match.relation=='syn') {
+            entities.entity.entity=='resources' ? found.match.resources.push(entity.match) : found.match.attributes.push(entity.match);
+        }
+        else {
+            let object = {relation: entity.relation, insert: entity.value, found: entity.match};
+            entities.entity.entity=='resources' ? found.match.resources.push(object) : found.match.attributes.push(object);
+        }
+    });
+    console.log(found);
+}
+
+function composeResult(objectValidated) {
+    let resultToSend =  "Intent recognised: " + objectValidated.intent;
+    if(resultToSend.resource) {
+        resultToSend += ", resource: " + resultToSend.resource;
+        objectValidated.attribute.forEach(attribute => {
+            if(attribute.relation)
+                resultToSend += ", attribute relation: " + attribute.relation + " attribute insert: " + attribute.insert + " attribute found: " + attribute.found
+            else
+                resultToSend += ", attribute: " + attribute;
+        });
+        array.forEach(element => {
+            
+        });
     }
+    else {
+        resultToSend += ", resource: not found";
+    }
+    
+    return resultToSend;
 }
 
 function validator(validation, req) {
@@ -122,4 +163,4 @@ function validator(validation, req) {
     }
 }
 
-module.exports = { post, configureValidator, openSite, askValidator, validator };
+module.exports = { post, configureValidator, openSite, askValidator, newValidator, composeResult, validator};

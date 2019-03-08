@@ -35,22 +35,22 @@ app.post('/conversation', async (req, res) => {
             //impariamo la struttura del sito da Botify
             let structureBotify = await MY_FUNCTIONS.openSite(req, body.action);
             if (structureBotify.error) {
-                res.status(500).send(structureBotify.error);
+                res.status(500).send(structureBotify);
             } else {
 
                 console.log(structureBotify);
                 //configuriamo Rasa per sapere la struttura del sito in cui ci troviamo
                 let configurationURI = await MY_FUNCTIONS.configureValidator(structureBotify);
                 if (configurationURI.error) {
-                    res.status(500).send(configurationURI.error);
+                    res.status(500).send(configurationURI);
                 }
                 else {
                     //salvo in sessione configurationURI
                     req.session.configurationURI = configurationURI;
 
-                    let resultToSend = { action: "Site opened: " + body.action };
+                    let resultToSend = { action: "Site opened: " + body.action + "ID:" + configurationURI.id };
                     //Debugging Frontend
-                    resultToSend.log = JSON.stringify(configurationURI, null, " ");
+                    resultToSend.log = JSON.stringify(structureBotify, null, " ");
 
                     res.json(resultToSend);
                 }
@@ -59,19 +59,23 @@ app.post('/conversation', async (req, res) => {
         //è un'altro tipo di azione, un comando, ex: "list me proposals", chiamo Rasa per fare la validazione
         else if (req.session.configurationURI) {
             let responseToSend = {};
-            console.log(body.action);
-            console.log(req.session.configurationURI);
+            //console.log(body.action);
+            //console.log(req.session.configurationURI);
 
             let validation = await MY_FUNCTIONS.askValidator(body.action, req.session.configurationURI);
             console.log(validation);
 
             if (validation.error) {
-                res.status(500).send(validation.error);
+                res.status(500).send(validation);
             }
             else {
+                //let objectValidated = MY_FUNCTIONS.newValidator(validation, req);
 
-                //responseToSend.action = MY_FUNCTIONS.validator(validation, req);
-                responseToSend.action = JSON.stringify(validation, null, " ");
+                //let resultToSend = MY_FUNCTIONS.composeResult(objectValidated);
+                let resultToSend = {};
+
+                responseToSend.action = "it works"
+                responseToSend.log = JSON.stringify(validation, null, " ");
                 res.json(responseToSend);
             }
         }
