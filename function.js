@@ -108,7 +108,7 @@ function writeResult(resultToSend, object, resAtt, match) {
     object.forEach(element => {
         if (element.relation) {
             if (match)
-                resultToSend += ", " +  resAtt + " insert: " + element.insert + ", " + resAtt + " relation: " + element.relation + ", " + resAtt + " found: " + element.found;
+                resultToSend += ", " + resAtt + " insert: " + element.insert + ", " + resAtt + " relation: " + element.relation + ", " + resAtt + " found: " + element.found;
         } else {
             if (match) {
                 resultToSend += ", " + resAtt + ": " + element;

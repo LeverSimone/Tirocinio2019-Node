@@ -37,7 +37,7 @@ app.post('/conversation', async (req, res) => {
             if (structureBotify.error) {
                 res.status(500).send(structureBotify);
             } else {
-                
+
                 //configuriamo Rasa per sapere la struttura del sito in cui ci troviamo
                 let configurationURI = await MY_FUNCTIONS.configureValidator(structureBotify);
                 if (configurationURI.error) {
@@ -58,14 +58,25 @@ app.post('/conversation', async (req, res) => {
         //è un'altro tipo di azione, un comando, ex: "list me proposals", chiamo Rasa per fare la validazione
         else if (req.session.configurationURI) {
 
+            //chiamo il server Rasa per fare la validazione dell'input utente
             let validation = await MY_FUNCTIONS.askToValide(body.action, req.session.configurationURI);
 
             if (validation.error) {
                 res.status(500).send(validation);
             }
             else {
+                //prendo solo gli elementi interessanti dalla risposta validata
                 let objectValidated = MY_FUNCTIONS.validator(validation, req);
 
+                //ricordo contesto
+                if(!objectValidated.match.resources[0] && req.session.context)
+                {
+                    objectValidated.match.resources.push(req.session.context);
+                } else {
+                    req.session.context = objectValidated.match.resources[0]
+                }
+
+                //compongo la stringa di output
                 let resultToSend = {action: MY_FUNCTIONS.composeResult(objectValidated)};
 
                 resultToSend.log = JSON.stringify(validation, null, " ");
