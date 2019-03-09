@@ -28,30 +28,39 @@ app.post('/conversation', async (req, res) => {
     if (body.action) {
         //L'azione inserita è un sito
         if (body.action.includes('http')) {
-            
+            let resultToSend = { action: "Site opened: " + body.action };
+
             //resetto session context
             req.session.context = undefined;
 
-            //impariamo la struttura del sito da Botify
-            let structureBotify = await MY_FUNCTIONS.openSite(req, body.action);
-            if (structureBotify.error) {
-                res.status(500).send(structureBotify);
+            let configurationURI = await MY_FUNCTIONS.takeConfID(body.action);
+
+            if (configurationURI) {
+                req.session.configurationURI = configurationURI.id;
+                res.json(resultToSend);
             } else {
 
-                //configuriamo Rasa per sapere la struttura del sito in cui ci troviamo
-                let configurationURI = await MY_FUNCTIONS.configureValidator(structureBotify);
-                if (configurationURI.error) {
-                    res.status(500).send(configurationURI);
-                }
-                else {
-                    //salvo in sessione configurationURI
-                    req.session.configurationURI = configurationURI;
+                //impariamo la struttura del sito da Botify
+                let structureBotify = await MY_FUNCTIONS.openSite(body.action);
+                if (structureBotify.error) {
+                    res.status(500).send(structureBotify);
+                } else {
+                    structureBotify.site = body.action;
 
-                    let resultToSend = { action: "Site opened: " + body.action + "ID:" + configurationURI.id };
-                    //Debugging Frontend
-                    resultToSend.log = JSON.stringify(structureBotify, null, " ");
+                    //configuriamo Rasa per sapere la struttura del sito in cui ci troviamo
+                    configurationURI = await MY_FUNCTIONS.configureValidator(structureBotify);
+                    if (configurationURI.error) {
+                        res.status(500).send(configurationURI);
+                    }
+                    else {
+                        //salvo in sessione configurationURI
+                        req.session.configurationURI = configurationURI.id;
 
-                    res.json(resultToSend);
+                        //Debugging Frontend
+                        resultToSend.log = JSON.stringify(structureBotify, null, " ");
+
+                        res.json(resultToSend);
+                    }
                 }
             }
         }
@@ -69,15 +78,14 @@ app.post('/conversation', async (req, res) => {
                 let objectValidated = MY_FUNCTIONS.validator(validation, req);
 
                 //ricordo contesto
-                if(!objectValidated.match.resources[0] && req.session.context)
-                {
+                if (!objectValidated.match.resources[0] && req.session.context) {
                     objectValidated.match.resources.push(req.session.context);
                 } else {
                     req.session.context = objectValidated.match.resources[0]
                 }
 
                 //compongo la stringa di output
-                let resultToSend = {action: MY_FUNCTIONS.composeResult(objectValidated)};
+                let resultToSend = { action: MY_FUNCTIONS.composeResult(objectValidated) };
 
                 resultToSend.log = JSON.stringify(validation, null, " ");
                 res.json(resultToSend);

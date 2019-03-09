@@ -16,7 +16,7 @@ function get(url) {
     return fetch(url);
 }
 
-async function openSite(req, action) {
+async function openSite(action) {
     let structureBotify = [];
     let objToPuppetteer = { site: action };
 
@@ -25,6 +25,21 @@ async function openSite(req, action) {
         structureBotify = await result.json();
 
         return structureBotify;
+    } catch (error) {
+        let object = { error: error }
+        console.log(error);
+        return (object)
+    }
+}
+
+async function takeConfID(site) {
+    //controlliamo se il server Python conosce già il sito, in caso recuperiamo il conf_id
+    try {
+        let result = await get(GLOBAL_SETTINGS.DESTINATION_URL_RASA + '/site?site=' + site);
+        let conf_id = await result.json();
+
+        return conf_id
+
     } catch (error) {
         let object = { error: error }
         console.log(error);
@@ -50,7 +65,7 @@ async function configureValidator(structureBotify) {
 async function askToValide(comand, configurationURI) {
     //chiediamo a Rasa di fare Validation
     try {
-        let result = await get(GLOBAL_SETTINGS.DESTINATION_URL_RASA + '/parse?q=' + comand + '&conf=' + configurationURI.id);
+        let result = await get(GLOBAL_SETTINGS.DESTINATION_URL_RASA + '/parse?q=' + comand + '&conf=' + configurationURI);
         let validation = await result.json();
 
         return validation
@@ -120,4 +135,4 @@ function writeResult(resultToSend, object, resAtt, match) {
     return resultToSend;
 }
 
-module.exports = { configureValidator, openSite, askToValide, validator, composeResult };
+module.exports = { configureValidator, openSite, askToValide, validator, composeResult, takeConfID};
