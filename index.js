@@ -78,7 +78,7 @@ app.post('/conversation', async (req, res) => {
                 let objectValidated = MY_FUNCTIONS.validator(validation, req);
 
                 //ricordo contesto
-                if (!objectValidated.match.resources[0] && req.session.context) {
+                if (!objectValidated.match.resources[0] && !objectValidated.not_matched.resources[0] && req.session.context) {
                     objectValidated.match.resources.push(req.session.context);
                 } else {
                     req.session.context = objectValidated.match.resources[0]
