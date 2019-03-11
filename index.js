@@ -35,7 +35,7 @@ app.post('/conversation', async (req, res) => {
 
             let configurationURI = await MY_FUNCTIONS.takeConfID(body.action);
 
-            if (configurationURI) {
+            if (configurationURI.id) {
                 req.session.configurationURI = configurationURI.id;
                 res.json(resultToSend);
             } else {
