@@ -37,9 +37,8 @@ async function takeConfID(site) {
     try {
         let result = await get(GLOBAL_SETTINGS.DESTINATION_URL_RASA + '/site?site=' + site);
         let conf_id = await result.json();
-
+        
         return conf_id
-
     } catch (error) {
         let object = { error: error }
         console.log(error);

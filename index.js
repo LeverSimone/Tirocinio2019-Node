@@ -45,7 +45,8 @@ app.post('/conversation', async (req, res) => {
                 if (structureBotify.error) {
                     res.status(500).send(structureBotify);
                 } else {
-                    structureBotify.site = body.action;
+                    //inserisco il link del sito nella struttura imparata
+                    structureBotify._id = body.action;
 
                     //configuriamo Rasa per sapere la struttura del sito in cui ci troviamo
                     configurationURI = await MY_FUNCTIONS.configureValidator(structureBotify);
@@ -87,6 +88,7 @@ app.post('/conversation', async (req, res) => {
                 //compongo la stringa di output
                 let resultToSend = { action: MY_FUNCTIONS.composeResult(objectValidated) };
 
+                //Debugging Frontend
                 resultToSend.log = JSON.stringify(validation, null, " ");
                 res.json(resultToSend);
             }
