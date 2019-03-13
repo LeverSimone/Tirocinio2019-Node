@@ -19,6 +19,8 @@ const MY_FUNCTIONS = require("./function.js");
 
 app.use('/', express.static('public'));
 
+app.use('/examples/', express.static('examples'));
+
 app.get('/', (req, res) => {
     res.json({ status: 'ok' });
 })
