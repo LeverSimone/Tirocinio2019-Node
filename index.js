@@ -2,6 +2,7 @@ const express = require('express');
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var session = require('express-session');
+const engine = require('conweb-engine');
 
 const app = express();
 app.use(bodyParser.json());
@@ -77,22 +78,43 @@ app.post('/conversation', async (req, res) => {
                 res.status(500).send(validation);
             }
             else {
-                //prendo solo gli elementi interessanti dalla risposta validata
-                let objectValidated = MY_FUNCTIONS.validator(validation, req);
+                //compongo la stringa di output
+                //let resultToSend = { action: MY_FUNCTIONS.composeResult(objectValidated) };
+                console.log("\n");
+                console.log(validation);
+                if (validation.matching[0]) {
+                    console.log("validation.matching[0].entity");
+                    console.log(validation.matching[0].entity);
+                    console.log("validation.matching[0].match");
+                    console.log(validation.matching[0].match);
+                }
+                console.log("\n");
 
+                let objToEngine = MY_FUNCTIONS.objToRun(validation, req.session.configurationURI);
+
+                //inserisci da context
+                /*
                 //ricordo contesto
                 if (!objectValidated.match.resources[0] && !objectValidated.not_matched.resources[0] && req.session.context) {
                     objectValidated.match.resources.push(req.session.context);
                 } else {
                     req.session.context = objectValidated.match.resources[0]
+                }*/
+
+                //prendi dall'oggetto di ritorno cosa non ha matchato
+                if (!objToEngine) {
+                    objToEngine = { action: "You insert something that is not in the site" }
+                    //Debugging Frontend
+                    objToEngine.log = JSON.stringify(validation, null, " ");
+                    res.json(objToEngine)
+                } else {
+                    //res.json(objToEngine);
+                    //Debugging Frontend
+                    objToEngine.log = JSON.stringify(objToEngine, null, " ");
+                    let result = await engine.processIntent(objToEngine)
+                    objToEngine.action = JSON.stringify(result, null, " ");
+                    res.json(objToEngine);
                 }
-
-                //compongo la stringa di output
-                let resultToSend = { action: MY_FUNCTIONS.composeResult(objectValidated) };
-
-                //Debugging Frontend
-                resultToSend.log = JSON.stringify(validation, null, " ");
-                res.json(resultToSend);
             }
         }
         else {

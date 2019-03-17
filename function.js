@@ -37,7 +37,7 @@ async function takeConfID(site) {
     try {
         let result = await get(GLOBAL_SETTINGS.DESTINATION_URL_RASA + '/site?site=' + site);
         let conf_id = await result.json();
-        
+
         return conf_id
     } catch (error) {
         let object = { error: error }
@@ -74,6 +74,48 @@ async function askToValide(comand, configurationURI) {
         console.log(error);
         return (object)
     }
+}
+
+//la resource è la prima inserita dall'utente rispetto ad operatore, attributes
+function objToRun(validation, link) {
+    if (!validation.matching_failed[0] && validation.matching[0]) {
+        let object = {
+            url: link,
+            component: validation.matching[0].match.component,
+            query: {
+                intent: validation.intent.name,
+                resource: {
+                    name: validation.matching[0] ? validation.matching[0].match.resource : null,
+                    selector: validation.matching[0] ? validation.matching[0].match.selector : null,
+                    param_attr: {
+                        //itera sull'oggetto e prendi elementi non in ordine
+                        name: validation.matching[1] ? validation.matching[1].match : null,
+                        selector: validation.matching[1] ? "[bot-attribute="+ validation.matching[1].match +"]" : null
+                    },
+                    operation: null,
+                    attributes: []
+                }
+            }
+        };
+        /*validation.matching.forEach(entities => {
+            //console.log("entities");
+            //console.log(entities);
+            if (entities.entity.entity == "attribute") {
+                object.query.resource.attributes.push(entities.match);
+            }
+        });*/
+        //console.log("\n");
+        //console.log(validation.matching[0].match.attributes);
+        validation.matching[0].match.attributes.forEach(attributes => {
+            object.query.resource.attributes.push({
+                name : attributes,
+                selector : "[bot-attribute="+attributes+"]"
+              });
+        });
+        return object;
+    }
+    else
+        return false;
 }
 
 function validator(validation) {
@@ -134,4 +176,4 @@ function writeResult(resultToSend, object, resAtt, match) {
     return resultToSend;
 }
 
-module.exports = { configureValidator, openSite, askToValide, validator, composeResult, takeConfID};
+module.exports = { configureValidator, openSite, askToValide, validator, composeResult, takeConfID, objToRun };
