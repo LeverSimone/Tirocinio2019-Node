@@ -37,8 +37,10 @@ app.post('/conversation', async (req, res) => {
             req.session.context = undefined;
 
             let configurationURI = await MY_FUNCTIONS.takeConfID(body.action);
-
-            if (configurationURI.id) {
+            if (configurationURI.error) {
+                res.status(500).send(configurationURI.error);
+            } 
+            else if (configurationURI.id) {
                 req.session.configurationURI = configurationURI.id;
                 res.json(resultToSend);
             } else {
@@ -46,7 +48,7 @@ app.post('/conversation', async (req, res) => {
                 //impariamo la struttura del sito da Botify
                 let structureBotify = await MY_FUNCTIONS.openSite(body.action);
                 if (structureBotify.error) {
-                    res.status(500).send(structureBotify);
+                    res.status(500).send(structureBotify.error);
                 } else {
                     //inserisco il link del sito nella struttura imparata
                     structureBotify._id = body.action;
@@ -54,7 +56,7 @@ app.post('/conversation', async (req, res) => {
                     //configuriamo Rasa per sapere la struttura del sito in cui ci troviamo
                     configurationURI = await MY_FUNCTIONS.configureValidator(structureBotify);
                     if (configurationURI.error) {
-                        res.status(500).send(configurationURI);
+                        res.status(500).send(configurationURI.error);
                     }
                     else {
                         //salvo in sessione configurationURI
@@ -75,11 +77,9 @@ app.post('/conversation', async (req, res) => {
             let validation = await MY_FUNCTIONS.askToValide(body.action, req.session.configurationURI);
 
             if (validation.error) {
-                res.status(500).send(validation);
+                res.status(500).send(validation.error);
             }
             else {
-                //compongo la stringa di output
-                //let resultToSend = { action: MY_FUNCTIONS.composeResult(objectValidated) };
                 console.log("\n");
                 console.log(validation);
                 if (validation.matching[0]) {
@@ -91,6 +91,7 @@ app.post('/conversation', async (req, res) => {
                 console.log("\n");
 
                 let objToEngine = MY_FUNCTIONS.objToRun(validation, req.session.configurationURI);
+                console.log(objToEngine);
 
                 //inserisci da context
                 /*
@@ -108,7 +109,6 @@ app.post('/conversation', async (req, res) => {
                     objToEngine.log = JSON.stringify(validation, null, " ");
                     res.json(objToEngine)
                 } else {
-                    //res.json(objToEngine);
                     //Debugging Frontend
                     objToEngine.log = JSON.stringify(objToEngine, null, " ");
                     let result = await engine.processIntent(objToEngine)

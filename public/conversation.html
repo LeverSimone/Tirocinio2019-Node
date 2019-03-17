@@ -27,7 +27,11 @@
         if (action) {
           $.post("/conversation", { action: action }, function (result) {
             viewRenderingSearch(result);
-          });
+          })
+            .fail(function (response) {
+              console.log(response.responseText);
+              $("#search-result").append("<pre><code>" + response.responseText + "</code></pre>");
+            });
         }
       });
     });
