@@ -76,7 +76,6 @@ async function askToValide(comand, configurationURI) {
     }
 }
 
-//la resource è la prima inserita dall'utente rispetto ad operatore, attributes
 function objToRun(validation, link) {
     if (!validation.matching_failed[0] && validation.matching[0]) {
         let object = {
@@ -85,27 +84,39 @@ function objToRun(validation, link) {
             query: {
                 intent: validation.intent.name,
                 resource: {
-                    name: validation.matching[0] ? validation.matching[0].match.resource : null,
-                    selector: validation.matching[0] ? validation.matching[0].match.selector : null,
+                    name: null,
+                    selector: null,
                     param_attr: {
-                        //itera sull'oggetto e prendi elementi non in ordine
-                        name: validation.matching[1] ? validation.matching[1].match : null,
-                        selector: validation.matching[1] ? "[bot-attribute="+ validation.matching[1].match +"]" : null
+                        name: null,
+                        selector: null
                     },
                     operation: null,
                     attributes: []
                 }
             }
         };
-        /*validation.matching.forEach(entities => {
+        //prendo operation
+        validation.entities.forEach(entities => {
+            if(entities.entity.includes("op")) {    
+                object.query.resource.operation = entities.value;
+            }
+        });
+        //prendo resource e attributes dall'oggetto
+        validation.matching.forEach(entities => {
             //console.log("entities");
             //console.log(entities);
-            if (entities.entity.entity == "attribute") {
-                object.query.resource.attributes.push(entities.match);
+            if (entities.entity.entity == "resource") {
+                object.query.resource.name = entities.match.resource;
+                object.query.resource.selector = entities.match.selector;
             }
-        });*/
+            else if (entities.entity.entity == "attribute") {
+                object.query.resource.param_attr.name = entities.match;
+                object.query.resource.param_attr.selector = "[bot-attribute="+ entities.match +"]";
+            }
+        });
         //console.log("\n");
         //console.log(validation.matching[0].match.attributes);
+        //inserisco tutti gli attributes compatibili con la risorsa inserita
         validation.matching[0].match.attributes.forEach(attributes => {
             object.query.resource.attributes.push({
                 name : attributes,
