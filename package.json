@@ -23,6 +23,6 @@
     "express": "^4.16.4",
     "express-session": "^1.15.6",
     "node-fetch": "^2.3.0",
-    "conweb-engine": "github:TrentoCrowdAI/conweb-engine#production"
+    "conweb-engine": "github:TrentoCrowdAI/conweb-engine#develop"
   }
 }

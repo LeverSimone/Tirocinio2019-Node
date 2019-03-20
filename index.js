@@ -2,7 +2,7 @@ const express = require('express');
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var session = require('express-session');
-const engine = require('conweb-engine');
+const engine = require('conweb-engine/components/engine');
 
 const app = express();
 app.use(bodyParser.json());
