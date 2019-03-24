@@ -108,20 +108,14 @@ function objToRun(validation, link) {
             if (entities.entity.entity == "resource") {
                 object.query.resource.name = entities.match.resource;
                 object.query.resource.selector = entities.match.selector;
-            }
+                //inserisco tutti gli attributes compatibili con la risorsa inserita
+                entities.match.attributes.forEach(attributes => {
+                    object.query.resource.attributes.push({name: attributes.name, selector: attributes.selector});
+                });
+            } //inserisco gli attributes indicati dall'utente
             else if (entities.entity.entity == "attribute") {
-                object.query.resource.param_attr.name = entities.match;
-                object.query.resource.param_attr.selector = "[bot-attribute="+ entities.match +"]";
+                object.query.resource.param_attr = entities.match;
             }
-        });
-        //console.log("\n");
-        //console.log(validation.matching[0].match.attributes);
-        //inserisco tutti gli attributes compatibili con la risorsa inserita
-        validation.matching[0].match.attributes.forEach(attributes => {
-            object.query.resource.attributes.push({
-                name : attributes,
-                selector : "[bot-attribute="+attributes+"]"
-              });
         });
         return object;
     }
