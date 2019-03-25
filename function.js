@@ -35,6 +35,7 @@ async function openSite(action) {
 async function takeConfID(site) {
     //controlliamo se il server Python conosce già il sito, in caso recuperiamo il conf_id
     try {
+        site = encodeURIComponent(site);
         let result = await get(GLOBAL_SETTINGS.DESTINATION_URL_RASA + '/site?site=' + site);
         let conf_id = await result.json();
 
@@ -64,6 +65,7 @@ async function configureValidator(structureBotify) {
 async function askToValide(comand, configurationURI) {
     //chiediamo a Rasa di fare Validation
     try {
+        configurationURI = encodeURIComponent(configurationURI);
         let result = await get(GLOBAL_SETTINGS.DESTINATION_URL_RASA + '/parse?q=' + comand + '&conf=' + configurationURI);
         let validation = await result.json();
 
