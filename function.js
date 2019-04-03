@@ -125,6 +125,47 @@ function objToRun(validation, link) {
         return false;
 }
 
+function newObjToRun(validation, link) {
+    if (!validation.matching_failed[0] && validation.matching[0]) {
+        let object = {
+            url: link,
+            component: validation.matching[0].match.component,
+            query: {
+                intent: validation.intent.name,
+                parameters: [], //ex: {name : "attribute", value : "stars"}
+                resource: {
+                    name: null,
+                    selector: null,
+                    attributes: []
+                }
+            }
+        };
+        //prendo operation e attr-value (ex: carlos)
+        validation.entities.forEach(entities => {
+            if(entities.entity.includes("op") || entities.entity == "attr-value") {    
+                object.query.parameters.push({name: entities.entity, value: entities.value});
+            }
+        });
+        //prendo resource e attributes dall'oggetto
+        validation.matching.forEach(entities => {
+            if (entities.entity.entity == "resource") {
+                object.query.resource.name = entities.match.resource;
+                object.query.resource.selector = entities.match.selector;
+                //inserisco tutti gli attributes compatibili con la risorsa inserita
+                entities.match.attributes.forEach(attributes => {
+                    object.query.resource.attributes.push({name: attributes.name, selector: attributes.selector});
+                });
+            } //inserisco gli attributes indicati dall'utente
+            else if (entities.entity.entity == "attribute") {
+                object.query.parameters.push({name: "attribute", value: entities.match.name});
+            }
+        });
+        return object;
+    }
+    else
+        return false;
+}
+
 function validator(validation) {
     found = { match: { intent: validation.intent.name, resources: [], attributes: [] }, not_matched: { resources: [], attributes: [] } }
     //metti in found un oggetto di tipo resources/attributes e il suo valore
@@ -183,4 +224,4 @@ function writeResult(resultToSend, object, resAtt, match) {
     return resultToSend;
 }
 
-module.exports = { configureValidator, openSite, askToValide, validator, composeResult, takeConfID, objToRun };
+module.exports = { configureValidator, openSite, askToValide, validator, composeResult, takeConfID, objToRun, newObjToRun};

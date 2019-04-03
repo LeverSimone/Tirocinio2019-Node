@@ -90,7 +90,7 @@ app.post('/conversation', async (req, res) => {
                 }
                 console.log("\n");
 
-                let objToEngine = MY_FUNCTIONS.objToRun(validation, req.session.configurationURI);
+                let objToEngine = MY_FUNCTIONS.newObjToRun(validation, req.session.configurationURI);
                 console.log(objToEngine);
 
                 //inserisci da context
