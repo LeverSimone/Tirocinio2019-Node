@@ -80,7 +80,7 @@ app.post('/conversation', async (req, res) => {
                 res.status(500).send(validation.error);
             }
             else {
-                console.log("\n");
+                /*console.log("\n");
                 console.log(validation);
                 if (validation.matching[0]) {
                     console.log("validation.matching[0].entity");
@@ -88,10 +88,10 @@ app.post('/conversation', async (req, res) => {
                     console.log("validation.matching[0].match");
                     console.log(validation.matching[0].match);
                 }
-                console.log("\n");
+                console.log("\n");*/
 
                 let objToEngine = MY_FUNCTIONS.newObjToRun(validation, req.session.configurationURI);
-                console.log(objToEngine);
+                //console.log(objToEngine);
 
                 //inserisci da context
                 /*
@@ -111,7 +111,7 @@ app.post('/conversation', async (req, res) => {
                 } else {
                     //Debugging Frontend
                     objToEngine.log = JSON.stringify(objToEngine, null, " ");
-                    let result = await engine.processIntent(objToEngine)
+                    let result = await engine.processIntent(objToEngine);
                     objToEngine.action = JSON.stringify(result, null, " ");
                     res.json(objToEngine);
                 }
