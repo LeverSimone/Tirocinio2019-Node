@@ -10,16 +10,16 @@
 
 <body>
   
-  <ul id="pr" bot-resource="proposals">
-    <li>
+  <div role="list" id="pr" bot-resource="proposals">
+    <article role="listitem">
       <h1>Titolo 1</h1>
       <div role="heading"></div>
       <div bot-attribute="topic">program</div>
       <div bot-attribute="hours">3</div>
       <div>
       </div>
-    </li>
-    <li>
+    </article>
+    <div class="element" role="listitem">
       <h1>Titolo 2</h1>
       <div role="heading"></div>
       <div bot-attribute="topic">RASA</div>
@@ -27,8 +27,24 @@
       <div>
       </div>
     </li>
-  </ul>
-  <ul id="cit" bot-resource="cities">
+  </div>
+  <div bot-component="list" id="animal" bot-resource="animals">
+    <article bot-item>
+      <h1>Titolo 1</h1>
+      <div role="heading"></div>
+      <div bot-attribute="topic">cat</div>
+      <div>
+      </div>
+    </article>
+    <div class="element" bot-item>
+      <h1>Titolo 2</h1>
+      <div role="heading"></div>
+      <div bot-attribute="topic">dog</div>
+      <div>
+      </div>
+    </li>
+  </div>
+  <ul id="cit">
     <li>Milano</li>
     <li>Trento</li>
   </ul>
