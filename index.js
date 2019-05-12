@@ -131,7 +131,7 @@ app.post('/', (req, res) => {
     console.log(sentMessage);
 
     object = {chat_id: chatId, text: 'hello'};
-    MY_FUNCTIONS.post(object, TELEGRAM_BOT_URL, 'application/json');
+    MY_FUNCTIONS.post(object, GLOBAL_SETTINGS.TELEGRAM_BOT_URL, 'application/json');
 
     //let body = {action: sentMessage};
     //await conversation(body, chatId);
