@@ -4,6 +4,9 @@ var cookieParser = require('cookie-parser');
 var session = require('express-session');
 const engine = require('conweb-engine/components/engine');
 
+const Telegraf = require('telegraf');
+const bot = new Telegraf('816662742:AAG4U6wvv8DSYAMg_x_SPfheHWyPRtu8Sis');
+
 const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -26,6 +29,22 @@ app.get('/', (req, res) => {
     res.json({ status: 'ok' });
 })
 
+
+bot.start((message) => {
+    console.log('started:', message.from.id)
+    return message.reply('Write an URL to open a site and then interact with it!');
+})
+
+bot.on('text', message => {
+    const command = message.message.text;
+    console.log(message.message.text);
+
+    
+    
+});
+
+bot.startPolling();
+
 app.post('/conversation', async (req, res) => {
     let body = req.body;
     if (body.action) {
@@ -39,7 +58,7 @@ app.post('/conversation', async (req, res) => {
             let configurationURI = await MY_FUNCTIONS.takeConfID(body.action);
             if (configurationURI.error) {
                 res.status(500).send(configurationURI.error);
-            } 
+            }
             else if (configurationURI.id) {
                 req.session.configurationURI = configurationURI.id;
                 res.json(resultToSend);
