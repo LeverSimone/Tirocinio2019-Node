@@ -224,4 +224,4 @@ function writeResult(resultToSend, object, resAtt, match) {
     return resultToSend;
 }
 
-module.exports = { configureValidator, openSite, askToValide, validator, composeResult, takeConfID, objToRun, newObjToRun};
+module.exports = {post, configureValidator, openSite, askToValide, validator, composeResult, takeConfID, objToRun, newObjToRun};
