@@ -43,7 +43,7 @@ bot.on('text', message => {
     
 });
 
-bot.startPolling();
+//bot.startPolling();
 
 app.post('/conversation', async (req, res) => {
     let body = req.body;
