@@ -130,9 +130,11 @@ app.post('/', async (req, res) => {
     const sentMessage = req.body.message.text;
     console.log(sentMessage);
 
-    object = {chat_id: chatId, text: 'hello'};
-    await MY_FUNCTIONS.post(object, GLOBAL_SETTINGS.TELEGRAM_BOT_URL, 'application/json');
+    let object = {chat_id: chatId, text: 'hello'};
+    let response =await MY_FUNCTIONS.post(object, GLOBAL_SETTINGS.TELEGRAM_BOT_URL, 'application/json');
 
+    console.log("response:");
+    console.log(response);
     //let body = {action: sentMessage};
     //await conversation(body, chatId);
 });
