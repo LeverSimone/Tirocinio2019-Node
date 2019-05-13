@@ -136,6 +136,8 @@ app.post('/', async (req, res) => {
 
     console.log("response:");
     console.log(responseBot);
+
+    res.sendStatus(200);
     //let body = {action: sentMessage};
     //await conversation(body, chatId);
 });
