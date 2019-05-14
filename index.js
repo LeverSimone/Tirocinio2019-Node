@@ -129,7 +129,7 @@ async function conversation(body, req, chatId) {
 }
 
 //Conversation per Telegram
-app.post('/', async (req, res) => {
+app.post('/conversationBot', async (req, res) => {
     const chatId = req.body.message.chat.id;
     const sentMessage = req.body.message.text;
     console.log(sentMessage);
