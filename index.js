@@ -141,6 +141,8 @@ app.post('/', async (req, res) => {
     const sentMessage = req.body.message.text;
     console.log(sentMessage);
 
+    let body = {action: sentMessage};
+
     let resultToSend = await conversation(body, req, res);
 
     if (resultToSend.error) {
