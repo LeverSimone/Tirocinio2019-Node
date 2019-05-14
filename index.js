@@ -18,6 +18,9 @@ app.use(session({
 const GLOBAL_SETTINGS = require("./global_settings.js");
 const MY_FUNCTIONS = require("./function.js");
 
+//Array in mempory per mantenere l'associazione tra la chat e il sito di cui si sta parlando
+var siteTelegram = [];
+
 app.use('/', express.static('public'));
 
 app.use('/examples/', express.static('examples'));
@@ -26,22 +29,32 @@ app.get('/', (req, res) => {
     res.json({ status: 'ok' });
 })
 
-async function conversation(body, req, res) {
+function setSession (chatId, valueToSet, req) {
+    if(chatId) {
+        siteTelegram[chatId] = valueToSet;
+    } else {
+        req.session.configurationURI = valueToSet;
+    }
+}
+
+async function conversation(body, req, chatId) {
     if (body.action) {
         //L'azione inserita è un sito
         if (body.action.includes('http')) {
             let resultToSend = { action: "Site opened: " + body.action };
 
             //resetto session context
-            req.session.context = undefined;
-
+            //req.session.context = undefined;
+            //setSession(chatId, undefined, req);
+            
             let configurationURI = await MY_FUNCTIONS.takeConfID(body.action);
             if (configurationURI.error) {
                 //res.status(500).send(configurationURI.error);
                 return { action: configurationURI.error, error: 500 };
             }
             else if (configurationURI.id) {
-                req.session.configurationURI = configurationURI.id;
+                //req.session.configurationURI = configurationURI.id;
+                setSession(chatId, configurationURI.id, req);
                 //res.json(resultToSend);
                 return resultToSend;
             } else {
@@ -63,7 +76,8 @@ async function conversation(body, req, res) {
                     }
                     else {
                         //salvo in sessione configurationURI
-                        req.session.configurationURI = configurationURI.id;
+                        //req.session.configurationURI = configurationURI.id;
+                        setSession(chatId, configurationURI.id, req);
 
                         //Debugging Frontend
                         resultToSend.log = JSON.stringify(structureBotify, null, " ");
@@ -75,10 +89,12 @@ async function conversation(body, req, res) {
             }
         }
         //è un'altro tipo di azione, un comando, ex: "list me proposals", chiamo Rasa per fare la validazione
-        else if (req.session.configurationURI) {
+        else if (req.session.configurationURI || siteTelegram[chatId]) {
+
+            let configurationURI = req.session.configurationURI ? req.session.configurationURI : siteTelegram[chatId] ; 
 
             //chiamo il server Rasa per fare la validazione dell'input utente
-            let validation = await MY_FUNCTIONS.askToValide(body.action, req.session.configurationURI);
+            let validation = await MY_FUNCTIONS.askToValide(body.action, configurationURI);
 
             if (validation.error) {
                 //res.status(500).send(validation.error);
@@ -95,10 +111,10 @@ async function conversation(body, req, res) {
                 }
                 console.log("\n");*/
 
-                let objToEngine = MY_FUNCTIONS.newObjToRun(validation, req.session.configurationURI);
+                let objToEngine = MY_FUNCTIONS.newObjToRun(validation, configurationURI);
                 //console.log(objToEngine);
 
-                //inserisci da context
+                //inserisci da context, da implementare nella parte di Python
                 /*
                 //ricordo contesto
                 if (!objectValidated.match.resources[0] && !objectValidated.not_matched.resources[0] && req.session.context) {
@@ -143,7 +159,7 @@ app.post('/', async (req, res) => {
 
     let body = {action: sentMessage};
 
-    let resultToSend = await conversation(body, req, res);
+    let resultToSend = await conversation(body, req, chatId);
 
     if (resultToSend.error) {
         res.status(resultToSend.error).send(resultToSend.action);
@@ -173,7 +189,7 @@ app.post('/', async (req, res) => {
 
 app.post('/conversation', async (req, res) => {
     let body = req.body;
-    let resultToSend = await conversation(body, req, res);
+    let resultToSend = await conversation(body, req);
 
     if (resultToSend.error) {
         res.status(resultToSend.error).send(resultToSend.action);
