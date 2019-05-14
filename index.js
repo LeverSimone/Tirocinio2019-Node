@@ -26,7 +26,7 @@ app.get('/', (req, res) => {
     res.json({ status: 'ok' });
 })
 
-async function conversation (body, idchat, req, res) {
+async function conversation(body, req, res) {
     if (body.action) {
         //L'azione inserita è un sito
         if (body.action.includes('http')) {
@@ -37,17 +37,20 @@ async function conversation (body, idchat, req, res) {
 
             let configurationURI = await MY_FUNCTIONS.takeConfID(body.action);
             if (configurationURI.error) {
-                res.status(500).send(configurationURI.error);
+                //res.status(500).send(configurationURI.error);
+                return { action: configurationURI.error, error: 500 };
             }
             else if (configurationURI.id) {
                 req.session.configurationURI = configurationURI.id;
-                res.json(resultToSend);
+                //res.json(resultToSend);
+                return resultToSend;
             } else {
 
                 //impariamo la struttura del sito da Botify
                 let structureBotify = await MY_FUNCTIONS.openSite(body.action);
                 if (structureBotify.error) {
-                    res.status(500).send(structureBotify.error);
+                    //res.status(500).send(structureBotify.error);
+                    return { action: structureBotify.error, error: 500 };
                 } else {
                     //inserisco il link del sito nella struttura imparata
                     structureBotify._id = body.action;
@@ -55,7 +58,8 @@ async function conversation (body, idchat, req, res) {
                     //configuriamo Rasa per sapere la struttura del sito in cui ci troviamo
                     configurationURI = await MY_FUNCTIONS.configureValidator(structureBotify);
                     if (configurationURI.error) {
-                        res.status(500).send(configurationURI.error);
+                        //res.status(500).send(configurationURI.error);
+                        return { action: configurationURI.error, error: 500 };
                     }
                     else {
                         //salvo in sessione configurationURI
@@ -64,7 +68,8 @@ async function conversation (body, idchat, req, res) {
                         //Debugging Frontend
                         resultToSend.log = JSON.stringify(structureBotify, null, " ");
 
-                        res.json(resultToSend);
+                        //res.json(resultToSend);
+                        return resultToSend;
                     }
                 }
             }
@@ -76,7 +81,8 @@ async function conversation (body, idchat, req, res) {
             let validation = await MY_FUNCTIONS.askToValide(body.action, req.session.configurationURI);
 
             if (validation.error) {
-                res.status(500).send(validation.error);
+                //res.status(500).send(validation.error);
+                return { action: validation.error, error: 500 };
             }
             else {
                 /*console.log("\n");
@@ -106,31 +112,51 @@ async function conversation (body, idchat, req, res) {
                     objToEngine = { action: "You insert something that is not in the site" }
                     //Debugging Frontend
                     objToEngine.log = JSON.stringify(validation, null, " ");
-                    res.json(objToEngine)
+                    //res.json(objToEngine)
+                    return objToEngine;
                 } else {
                     //Debugging Frontend
                     objToEngine.log = JSON.stringify(objToEngine, null, " ");
                     let result = await engine.processIntent(objToEngine);
                     objToEngine.action = JSON.stringify(result, null, " ");
-                    res.json(objToEngine);
+                    //res.json(objToEngine);
+                    return objToEngine;
                 }
             }
         }
         else {
-            res.json({ action: "You have to open a site before doing an action" });
+            //res.json({ action: "You have to open a site before doing an action" });
+            return { action: "You have to open a site before doing an action" };
         }
     }
     else {
-        res.status(400).send('Action is empty');
+        //res.status(400).send('Action is empty');
+        return { action: "Action is empty'", error: 400 };
     }
 }
 
+//Conversation per Telegram
 app.post('/', async (req, res) => {
     const chatId = req.body.message.chat.id;
     const sentMessage = req.body.message.text;
     console.log(sentMessage);
 
-    let object = {chat_id: chatId, text: 'hello'};
+    let resultToSend = await conversation(body, req, res);
+
+    if (resultToSend.error) {
+        res.status(resultToSend.error).send(resultToSend.action);
+    } else {
+        let object = { chat_id: chatId, text: resultToSend.action };
+        let responseBot = await MY_FUNCTIONS.post(object, GLOBAL_SETTINGS.TELEGRAM_BOT_URL, 'application/json');
+        let responseBotJson = await responseBot.json();
+
+        console.log("response:");
+        console.log(responseBotJson);
+
+        res.sendStatus(200);
+    }
+    /*
+    let object = { chat_id: chatId, text: 'hello' };
     let result = await MY_FUNCTIONS.post(object, GLOBAL_SETTINGS.TELEGRAM_BOT_URL, 'application/json');
     let responseBot = await result.json();
 
@@ -138,13 +164,20 @@ app.post('/', async (req, res) => {
     console.log(responseBot);
 
     res.sendStatus(200);
+    */
     //let body = {action: sentMessage};
     //await conversation(body, chatId);
 });
 
 app.post('/conversation', async (req, res) => {
     let body = req.body;
-    await conversation(body, null, req, res);
+    let resultToSend = await conversation(body, req, res);
+
+    if (resultToSend.error) {
+        res.status(resultToSend.error).send(resultToSend.action);
+    } else {
+        res.json(resultToSend);
+    }
 })
 
 app.post('/helloname', async (req, res) => {
