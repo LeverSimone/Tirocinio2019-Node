@@ -104,18 +104,31 @@ async function conversation(body, req, chatId) {
                     req.session.context = objectValidated.match.resources[0]
                 }*/
 
-                //prendi dall'oggetto di ritorno cosa non ha matchato
-                if (!objToEngine) {
-                    objToEngine = { action: "You insert something that is not in the site" }
+                let resultToSend;
+                if (objToEngine.result == 'false') {
+                    resultToSend = { action: 'You insert: ' };
+                    for (let i = 0; i < objToEngine.length; i++) {
+                        resultToSend.action += objToEngine[i].value + ", "
+                    }
+                    resultToSend.action += 'but these words are not in the site'
                     //Debugging Frontend
-                    objToEngine.log = JSON.stringify(validation, null, " ");
-                    return objToEngine;
+                    resultToSend.log = JSON.stringify(validation, null, " ");
+                    return resultToSend;
+                } else if (objToEngine.result == 'dissambiguation') {
+                    resultToSend = { action: 'In this site there are many ' + objToEngine.resource + ". Write the same action with one of these words: " };
+                    for (let i = 0; i < objToEngine.category.length; i++) {
+                        resultToSend.action += objToEngine.category[i] + ", "
+                    }
+                    resultToSend.log = JSON.stringify(objToEngine, null, " ");
+                    return resultToSend;
                 } else {
+                    //tutto è andato a buon fine
+                    //let result = await engine.processIntent(objToEngine);
+                    let result = {title: "Harry Potter", hours: "3"}
+                    resultToSend = { action: result };
                     //Debugging Frontend
-                    objToEngine.log = JSON.stringify(objToEngine, null, " ");
-                    let result = await engine.processIntent(objToEngine);
-                    objToEngine.action = JSON.stringify(result, null, " ");
-                    return objToEngine;
+                    resultToSend.log = JSON.stringify(objToEngine, null, " ");
+                    return resultToSend;
                 }
             }
         }
@@ -148,7 +161,18 @@ app.post('/conversationBot', async (req, res) => {
         if (resultToSend.error) {
             res.status(resultToSend.error).send(resultToSend.action);
         } else {
-            let object = { chat_id: chatId, text: resultToSend.action };
+            let object = { chat_id: chatId, text: "", parse_mode: "Markdown" };
+            for (let i = 0; i < resultToSend.action.length; i++) {
+                object.text += "- "
+                if (resultToSend.action[i].title) {
+                    object.text += "*" + resultToSend.action[i].title + "*\n"
+                }
+                for (var key in resultToSend.action[i]) {
+                    if (resultToSend.action[i].hasOwnProperty(key) && key!="title") {
+                        object.text += key + ": " + resultToSend.action[i][key];
+                    }
+                }
+            }
             let responseBot = await MY_FUNCTIONS.post(object, GLOBAL_SETTINGS.TELEGRAM_BOT_URL, 'application/json');
             let responseBotJson = await responseBot.json();
             console.log("response:");
@@ -165,6 +189,7 @@ app.post('/conversation', async (req, res) => {
     if (resultToSend.error) {
         res.status(resultToSend.error).send(resultToSend.action);
     } else {
+        resultToSend.action = JSON.stringify(resultToSend.action, null, " ")
         res.json(resultToSend);
     }
 })

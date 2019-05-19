@@ -1,20 +1,37 @@
 <html>
 
 <body>
-	<div id="1" role="list" bot-resource="animals" bot-category="dog">
+	<div id="blabla" role="list" bot-resource="animals" bot-category="dog">
 		<div>
-			<article role="listitem"> news </article>
+			<article role="listitem">
+				<div bot-attribute="topic">program</div>
+				<div bot-attribute="hours">3</div>
+			</article>
 		</div>
-		<article role="listitem"> news </article>
-		<div role="listitem" class="o-herobox-card"> news <div>
+		<article role="listitem">
+			<div bot-attribute="topic">program topic</div>
+			<div bot-attribute="hours">8</div>
+		</article>
+		<div role="listitem" class="o-herobox-card">
+			<div bot-attribute="topic">topic</div>
+			<div bot-attribute="hours">4</div>
+		</div>
 	</div>
-
-	<div id="2" bot-component="list" bot-resource="animals" bot-category="cat">
+	<div id="ciao" bot-component="list" bot-resource="animals" bot-category="cat">
 		<div>
-			<article bot-item> news </article>
+			<article bot-item>
+				<div bot-attribute="topic">cat 1</div>
+				<div bot-attribute="hours">4</div>
+			</article>
 		</div>
-		<article bot-item> news </article>
-		<div class="o-herobox-card" bot-item> news <div>
+		<article bot-item>
+			<div bot-attribute="topic">cat 2</div>
+			<div bot-attribute="hours">8</div>
+		</article>
+		<div class="o-herobox-card" bot-item>
+			<div bot-attribute="topic">cat 3</div>
+			<div bot-attribute="hours">7</div>
+		</div>
 	</div>
 
 </body>

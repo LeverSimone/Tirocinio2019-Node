@@ -79,8 +79,9 @@ async function askToValide(comand, configurationURI) {
 }
 
 function newObjToRun(validation, link) {
+    let object;
     if (!validation.matching_failed[0] && validation.matching[0]) {
-        let object = {
+        object = {
             url: link,
             component: validation.matching[0].match.component,
             query: {
@@ -88,6 +89,7 @@ function newObjToRun(validation, link) {
                 parameters: [], //ex: {name : "attribute", value : "stars"}
                 resource: {
                     name: null,
+                    category: null,
                     selector: null,
                     attributes: []
                 }
@@ -103,6 +105,7 @@ function newObjToRun(validation, link) {
         validation.matching.forEach(entities => {
             if (entities.entity.entity == "resource") {
                 object.query.resource.name = entities.match.resource;
+                object.query.resource.category = entities.match.category;
                 object.query.resource.selector = entities.match.selector;
                 //inserisco tutti gli attributes compatibili con la risorsa inserita
                 entities.match.attributes.forEach(attributes => {
@@ -113,10 +116,21 @@ function newObjToRun(validation, link) {
                 object.query.parameters.push({name: "attribute", value: entities.match.name});
             }
         });
+        //setto che tutto è andato a buon fine
+        object.result='true';
+        return object;
+    } else if (validation.dissambiguate.category[0]) {
+        //Bisogna fare dissambiguation
+        object = validation.dissambiguate;
+        object.result='dissambiguation';
+        return object
+    }
+    else {
+        //setto che il Matching è fallito
+        object = validation.matching_failed;
+        object.result='false'
         return object;
     }
-    else
-        return false;
 }
 
 module.exports = {post, configureValidator, openSite, askToValide, takeConfID, newObjToRun};
