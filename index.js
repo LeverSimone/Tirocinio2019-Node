@@ -116,18 +116,21 @@ async function conversation(body, req, chatId) {
                     return resultToSend;
                 } else if (objToEngine.result == 'dissambiguation') {
                     resultToSend = { action: 'In this site there are many ' + objToEngine.resource + ". Write the same action with one of these words: " };
-                    for (let i = 0; i < objToEngine.category.length; i++) {
-                        resultToSend.action += objToEngine.category[i] + ", "
+                    for (let i = 0; i < objToEngine.category.length-1; i++) {
+                        resultToSend.action += objToEngine.category[i] + ", ";
                     }
+                    resultToSend.action += objToEngine.category[objToEngine.category.length-1];
                     resultToSend.log = JSON.stringify(objToEngine, null, " ");
                     return resultToSend;
                 } else {
                     //tutto è andato a buon fine
                     //let result = await engine.processIntent(objToEngine);
-                    let result = {title: "Harry Potter", hours: "3"}
+                    let result = [{ title: "Harry Potter", hours: "3"}, { title: "Game of Thrones", hours: "8"}, { title: "Hunger Games", hours: "5"}];
                     resultToSend = { action: result };
                     //Debugging Frontend
                     resultToSend.log = JSON.stringify(objToEngine, null, " ");
+                    //format indica che l'output per Telegram è da formattare
+                    resultToSend.format = true;
                     return resultToSend;
                 }
             }
@@ -142,10 +145,10 @@ async function conversation(body, req, chatId) {
 }
 
 //Conversation per Telegram
-app.post('/conversationBot', async (req, res) => {
+app.post('/', async (req, res) => {
     const chatId = req.body.message.chat.id;
     const sentMessage = req.body.message.text;
-    console.log(sentMessage);
+    //console.log(sentMessage);
 
     if (sentMessage == '/start') {
 
@@ -161,18 +164,24 @@ app.post('/conversationBot', async (req, res) => {
         if (resultToSend.error) {
             res.status(resultToSend.error).send(resultToSend.action);
         } else {
-            let object = { chat_id: chatId, text: "", parse_mode: "Markdown" };
-            for (let i = 0; i < resultToSend.action.length; i++) {
-                object.text += "- "
-                if (resultToSend.action[i].title) {
-                    object.text += "*" + resultToSend.action[i].title + "*\n"
-                }
-                for (var key in resultToSend.action[i]) {
-                    if (resultToSend.action[i].hasOwnProperty(key) && key!="title") {
-                        object.text += key + ": " + resultToSend.action[i][key];
+            let object = { chat_id: chatId, text: resultToSend.action, parse_mode: "HTML"};
+            //console.log(object);
+            //Format output for Telegram in case the user do an action. ex: list cat
+            if (resultToSend.format) {
+                object.text = "";
+                for (let i = 0; i < resultToSend.action.length; i++) {
+                    if (resultToSend.action[i].title) {
+                        object.text += "<b>" + resultToSend.action[i].title + "</b>\n"
                     }
+                    for (var key in resultToSend.action[i]) {
+                        if (resultToSend.action[i].hasOwnProperty(key) && key!="title") {
+                            object.text += key + ": " + resultToSend.action[i][key] + "\n";
+                        }
+                    }
+                    object.text += "\n";
                 }
             }
+            //send response
             let responseBot = await MY_FUNCTIONS.post(object, GLOBAL_SETTINGS.TELEGRAM_BOT_URL, 'application/json');
             let responseBotJson = await responseBot.json();
             console.log("response:");
