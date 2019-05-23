@@ -124,8 +124,7 @@ async function conversation(body, req, chatId) {
                     return resultToSend;
                 } else {
                     //tutto è andato a buon fine
-                    //let result = await engine.processIntent(objToEngine);
-                    let result = [{ title: "Harry Potter", hours: "3"}, { title: "Game of Thrones", hours: "8"}, { title: "Hunger Games", hours: "5"}];
+                    let result = await engine.processIntent(objToEngine);
                     resultToSend = { action: result };
                     //Debugging Frontend
                     resultToSend.log = JSON.stringify(objToEngine, null, " ");
