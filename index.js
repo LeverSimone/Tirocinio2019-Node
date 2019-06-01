@@ -129,7 +129,10 @@ async function conversation(body, req, chatId) {
                     //Debugging Frontend
                     resultToSend.log = JSON.stringify(objToEngine, null, " ");
                     //format indica che l'output per Telegram è da formattare
-                    resultToSend.format = true;
+                    if (objToEngine.query.intent == 'list_about')
+                        resultToSend.format = "list_about";
+                    else if(objToEngine.query.intent != "list_count")
+                        resultToSend.format = "true";
                     return resultToSend;
                 }
             }
@@ -166,7 +169,7 @@ app.post('/', async (req, res) => {
             let object = { chat_id: chatId, text: resultToSend.action, parse_mode: "HTML"};
             //console.log(object);
             //Format output for Telegram in case the user do an action. ex: list cat
-            if (resultToSend.format) {
+            if (resultToSend.format == "true") {
                 object.text = "";
                 for (let i = 0; i < resultToSend.action.length; i++) {
                     if (resultToSend.action[i].title) {
@@ -177,6 +180,12 @@ app.post('/', async (req, res) => {
                             object.text += key + ": " + resultToSend.action[i][key] + "\n";
                         }
                     }
+                    object.text += "\n";
+                }
+            } else if (resultToSend.format == "list_about") {
+                object.text = "";
+                for (let i = 0; i < resultToSend.action.length; i++) {
+                    object.text += resultToSend.action[i];
                     object.text += "\n";
                 }
             }
