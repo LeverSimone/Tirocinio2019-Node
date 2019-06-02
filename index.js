@@ -116,10 +116,10 @@ async function conversation(body, req, chatId) {
                     return resultToSend;
                 } else if (objToEngine.result == 'dissambiguation') {
                     resultToSend = { action: 'In this site there are many ' + objToEngine.resource + ". Write the same action with one of these words: " };
-                    for (let i = 0; i < objToEngine.category.length-1; i++) {
+                    for (let i = 0; i < objToEngine.category.length - 1; i++) {
                         resultToSend.action += objToEngine.category[i] + ", ";
                     }
-                    resultToSend.action += objToEngine.category[objToEngine.category.length-1];
+                    resultToSend.action += objToEngine.category[objToEngine.category.length - 1];
                     resultToSend.log = JSON.stringify(objToEngine, null, " ");
                     return resultToSend;
                 } else {
@@ -131,7 +131,7 @@ async function conversation(body, req, chatId) {
                     //format indica che l'output per Telegram è da formattare
                     if (objToEngine.query.intent == 'list_about')
                         resultToSend.format = "list_about";
-                    else if(objToEngine.query.intent != "list_count")
+                    else if (objToEngine.query.intent != "list_count")
                         resultToSend.format = "true";
                     return resultToSend;
                 }
@@ -148,9 +148,10 @@ async function conversation(body, req, chatId) {
 
 //Conversation per Telegram
 app.post('/', async (req, res) => {
-    const chatId = req.body.message.chat.id;
+    console.log("req.body");
+    console.log(req.body);
+    let chatId = req.body.message.chat.id;
     const sentMessage = req.body.message.text;
-    //console.log(sentMessage);
 
     if (sentMessage == '/start') {
 
@@ -166,8 +167,7 @@ app.post('/', async (req, res) => {
         if (resultToSend.error) {
             res.status(resultToSend.error).send(resultToSend.action);
         } else {
-            let object = { chat_id: chatId, text: resultToSend.action, parse_mode: "HTML"};
-            //console.log(object);
+            let object = { chat_id: chatId, text: resultToSend.action, parse_mode: "HTML" };
             //Format output for Telegram in case the user do an action. ex: list cat
             if (resultToSend.format == "true") {
                 object.text = "";
@@ -176,7 +176,7 @@ app.post('/', async (req, res) => {
                         object.text += "<b>" + resultToSend.action[i].title + "</b>\n"
                     }
                     for (var key in resultToSend.action[i]) {
-                        if (resultToSend.action[i].hasOwnProperty(key) && key!="title") {
+                        if (resultToSend.action[i].hasOwnProperty(key) && key != "title" && resultToSend.action[i][key]) {
                             object.text += key + ": " + resultToSend.action[i][key] + "\n";
                         }
                     }
@@ -189,15 +189,49 @@ app.post('/', async (req, res) => {
                     object.text += "\n";
                 }
             }
+
+            // max 4096 character for message Telegram
+            // send multiple message in case of a long text
+            //let responseBotJson = await sendAsynchronousMessages(object)
             //send response
             let responseBot = await MY_FUNCTIONS.post(object, GLOBAL_SETTINGS.TELEGRAM_BOT_URL, 'application/json');
             let responseBotJson = await responseBot.json();
             console.log("response:");
             console.log(responseBotJson);
-            res.sendStatus(200);
+            if (responseBotJson.ok == false) {
+                object.text = "Error"
+                responseBot = await MY_FUNCTIONS.post(object, GLOBAL_SETTINGS.TELEGRAM_BOT_URL, 'application/json');
+                res.sendStatus(200);
+            } else {
+                res.sendStatus(200);
+            }
         }
     }
 });
+
+async function sendAsynchronousMessages(object) {
+    let allText = object.text;
+    let n = object.text.length;
+    let nMessageToSend = Math.ceil(n / GLOBAL_SETTINGS.TELEGRAM_MAX_MESSAGE);
+    let responseBot;
+    let responseBotJson;
+    let dividePosition;
+    let startPosition = 0;
+    for (let i = 0; i < nMessageToSend; i++) {
+        if (n < GLOBAL_SETTINGS.TELEGRAM_MAX_MESSAGE - 1 && i > 0) {
+            object.text = allText.substring(startPosition);
+        }
+        else {
+            dividePosition = allText.lastIndexOf("\n", ((i + 1) * GLOBAL_SETTINGS.TELEGRAM_MAX_MESSAGE) - 3);
+            object.text = allText.substring(startPosition, dividePosition + 3);
+            startPosition = dividePosition
+        }
+        console.log(object.text);
+        responseBot = await MY_FUNCTIONS.post(object, GLOBAL_SETTINGS.TELEGRAM_BOT_URL, 'application/json');
+    }
+    responseBotJson = await responseBot.json();
+    return responseBotJson;
+}
 
 app.post('/conversation', async (req, res) => {
     let body = req.body;
