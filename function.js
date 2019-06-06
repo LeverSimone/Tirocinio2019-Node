@@ -113,7 +113,7 @@ function newObjToRun(validation, link) {
                 });
             } //inserisco gli attributes indicati dall'utente
             else if (entities.entity.entity == "attribute") {
-                object.query.parameters.push({name: "attribute", value: entities.match.name});
+                object.query.parameters.push({name: "attribute", value: [entities.match.name]});
             }
         });
         //setto che tutto è andato a buon fine

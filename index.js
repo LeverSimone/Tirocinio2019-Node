@@ -125,6 +125,7 @@ async function conversation(body, req, chatId) {
                 } else {
                     //tutto è andato a buon fine
                     let result = await engine.processIntent(objToEngine);
+                    console.log(result);
                     resultToSend = { action: result };
                     //Debugging Frontend
                     resultToSend.log = JSON.stringify(objToEngine, null, " ");
@@ -157,7 +158,6 @@ app.post('/', async (req, res) => {
 
         let object = { chat_id: chatId, text: 'Open a site with an URL and then write an action' };
         let responseBot = await MY_FUNCTIONS.post(object, GLOBAL_SETTINGS.TELEGRAM_BOT_URL, 'application/json');
-        let responseBotJson = await responseBot.json();
         res.sendStatus(200);
 
     } else {
@@ -169,7 +169,10 @@ app.post('/', async (req, res) => {
         } else {
             let object = { chat_id: chatId, text: resultToSend.action, parse_mode: "HTML" };
             //Format output for Telegram in case the user do an action. ex: list cat
-            if (resultToSend.format == "true") {
+            if (resultToSend.action.length == 0) {
+                object.text="This list is empty";
+            }
+            else if (resultToSend.format == "true") {
                 object.text = "";
                 for (let i = 0; i < resultToSend.action.length; i++) {
                     if (resultToSend.action[i].title) {
@@ -192,12 +195,7 @@ app.post('/', async (req, res) => {
 
             // max 4096 character for message Telegram
             // send multiple message in case of a long text
-            //let responseBotJson = await sendAsynchronousMessages(object)
-            //send response
-            let responseBot = await MY_FUNCTIONS.post(object, GLOBAL_SETTINGS.TELEGRAM_BOT_URL, 'application/json');
-            let responseBotJson = await responseBot.json();
-            console.log("response:");
-            console.log(responseBotJson);
+            let responseBotJson = await sendAsynchronousMessages(object)
             if (responseBotJson.ok == false) {
                 object.text = "Error"
                 responseBot = await MY_FUNCTIONS.post(object, GLOBAL_SETTINGS.TELEGRAM_BOT_URL, 'application/json');
@@ -218,12 +216,12 @@ async function sendAsynchronousMessages(object) {
     let dividePosition;
     let startPosition = 0;
     for (let i = 0; i < nMessageToSend; i++) {
-        if (n < GLOBAL_SETTINGS.TELEGRAM_MAX_MESSAGE - 1 && i > 0) {
+        if (n < GLOBAL_SETTINGS.TELEGRAM_MAX_MESSAGE) {
             object.text = allText.substring(startPosition);
         }
         else {
-            dividePosition = allText.lastIndexOf("\n", ((i + 1) * GLOBAL_SETTINGS.TELEGRAM_MAX_MESSAGE) - 3);
-            object.text = allText.substring(startPosition, dividePosition + 3);
+            dividePosition = allText.lastIndexOf("\n", ((i + 1) * GLOBAL_SETTINGS.TELEGRAM_MAX_MESSAGE) - 1);
+            object.text = allText.substring(startPosition, dividePosition + 1);
             startPosition = dividePosition
         }
         console.log(object.text);
