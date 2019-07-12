@@ -125,14 +125,15 @@ async function conversation(body, req, chatId) {
                 } else {
                     //tutto è andato a buon fine
                     let result = await engine.processIntent(objToEngine);
-                    console.log(result);
+                    //console.log("result:");
+                    //console.log(result);
                     resultToSend = { action: result };
                     //Debugging Frontend
                     resultToSend.log = JSON.stringify(objToEngine, null, " ");
                     //format indica che l'output per Telegram è da formattare
-                    if (objToEngine.query.intent == 'list_about')
-                        resultToSend.format = "list_about";
-                    else if (objToEngine.query.intent != "list_count")
+                    if (objToEngine.query.intent == 'list_about' || objToEngine.query.intent == "list_count")
+                        resultToSend.format = objToEngine.query.intent;
+                    else
                         resultToSend.format = "true";
                     return resultToSend;
                 }
@@ -149,10 +150,17 @@ async function conversation(body, req, chatId) {
 
 //Conversation per Telegram
 app.post('/', async (req, res) => {
-    console.log("req.body");
-    console.log(req.body);
-    let chatId = req.body.message.chat.id;
-    const sentMessage = req.body.message.text;
+    //console.log("req.body");
+    //console.log(req.body);
+    let chatId;
+    let sentMessage;
+    if(req.body.message) {
+        chatId = req.body.message.chat.id;
+        sentMessage = req.body.message.text;
+    } else if (req.body.edited_message) {
+        chatId = req.body.edited_message.chat.id;
+        sentMessage = req.body.edited_message.text;
+    }
 
     if (sentMessage == '/start') {
 
@@ -170,16 +178,18 @@ app.post('/', async (req, res) => {
             let object = { chat_id: chatId, text: resultToSend.action, parse_mode: "HTML" };
             //Format output for Telegram in case the user do an action. ex: list cat
             if (resultToSend.action.length == 0) {
-                object.text="This list is empty";
+                object.text = "This list is empty";
             }
             else if (resultToSend.format == "true") {
                 object.text = "";
                 for (let i = 0; i < resultToSend.action.length; i++) {
-                    if (resultToSend.action[i].title) {
-                        object.text += "<b>" + resultToSend.action[i].title + "</b>\n"
+                    if (resultToSend.action[i].title || resultToSend.action[i].key) {
+                        let temp = resultToSend.action[i].title ? resultToSend.action[i].title : resultToSend.action[i].key;
+                        let titleNoSpace = temp.replace(/\n/g, '')
+                        object.text += "<b>" + titleNoSpace + "</b>\n"
                     }
                     for (var key in resultToSend.action[i]) {
-                        if (resultToSend.action[i].hasOwnProperty(key) && key != "title" && resultToSend.action[i][key]) {
+                        if (resultToSend.action[i].hasOwnProperty(key) && key != "title" && key != "key" && resultToSend.action[i][key]) {
                             object.text += key + ": " + resultToSend.action[i][key] + "\n";
                         }
                     }
@@ -208,8 +218,8 @@ app.post('/', async (req, res) => {
 });
 
 async function sendAsynchronousMessages(object) {
-    let allText = object.text;
-    let n = object.text.length;
+    let allText = object.text.toString();
+    let n = allText.length;
     let nMessageToSend = Math.ceil(n / GLOBAL_SETTINGS.TELEGRAM_MAX_MESSAGE);
     let responseBot;
     let responseBotJson;
@@ -224,10 +234,11 @@ async function sendAsynchronousMessages(object) {
             object.text = allText.substring(startPosition, dividePosition + 1);
             startPosition = dividePosition
         }
-        console.log(object.text);
+        //console.log(object.text);
         responseBot = await MY_FUNCTIONS.post(object, GLOBAL_SETTINGS.TELEGRAM_BOT_URL, 'application/json');
     }
     responseBotJson = await responseBot.json();
+    //console.log(responseBotJson);
     return responseBotJson;
 }
 
