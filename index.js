@@ -20,6 +20,13 @@ const MY_FUNCTIONS = require("./function.js");
 
 //Array in memory per mantenere l'associazione tra la chat e il sito di cui si sta parlando
 var siteTelegram = [];
+//Array in memory per mantenere l'associazione tra la chat e l'oggetto di risposta di cui si sta parlando
+var resultTelegram = [];
+//Array in memory per mantenere l'associazione tra la chat e la resource di cui si sta parlando
+var resourceTelegram = [];
+
+//numero di risultati da ritornare
+var nResult = 5;
 
 app.use('/', express.static('public'));
 
@@ -30,11 +37,21 @@ app.get('/', (req, res) => {
 })
 
 //Settare contenuto per la sessione API standard e per l'array in memory per Telegram
-function setSession(chatId, valueToSet, req) {
+function setSession(chatId, valueToSet, req, type) {
     if (chatId) {
-        siteTelegram[chatId] = valueToSet;
+        if (type == "site")
+            siteTelegram[chatId] = valueToSet;
+        else if (type == "result")
+            resultTelegram[chatId] = valueToSet;
+        else 
+            resourceTelegram[chatId] = valueToSet;
     } else {
-        req.session.configurationURI = valueToSet;
+        if (type == "site")
+            req.session.configurationURI = valueToSet;
+        else if (type == "result")
+            req.session.result = valueToSet;
+        else
+            req.session.resource = valueToSet;
     }
 }
 
@@ -52,7 +69,7 @@ async function conversation(body, req, chatId) {
                 return { action: configurationURI.error, error: 500 };
             }
             else if (configurationURI.id) {
-                setSession(chatId, configurationURI.id, req);
+                setSession(chatId, configurationURI.id, req, "site");
                 return resultToSend;
             } else {
 
@@ -71,7 +88,7 @@ async function conversation(body, req, chatId) {
                     }
                     else {
                         //salvo in sessione configurationURI
-                        setSession(chatId, configurationURI.id, req);
+                        setSession(chatId, configurationURI.id, req, "site");
 
                         //Debugging Frontend
                         resultToSend.log = JSON.stringify(structureBotify, null, " ");
@@ -93,50 +110,50 @@ async function conversation(body, req, chatId) {
                 return { action: validation.error, error: 500 };
             }
             else {
-                let objToEngine = MY_FUNCTIONS.newObjToRun(validation, configurationURI);
-
-                //inserisci da context, da implementare nella parte di Python
-                /*
-                //ricordo contesto
-                if (!objectValidated.match.resources[0] && !objectValidated.not_matched.resources[0] && req.session.context) {
-                    objectValidated.match.resources.push(req.session.context);
-                } else {
-                    req.session.context = objectValidated.match.resources[0]
-                }*/
-
                 let resultToSend;
-                if (objToEngine.result == 'false') {
-                    resultToSend = { action: 'You insert: ' };
-                    for (let i = 0; i < objToEngine.length; i++) {
-                        resultToSend.action += objToEngine[i].value + ", "
-                    }
-                    resultToSend.action += 'but these words are not in the site'
-                    //Debugging Frontend
-                    resultToSend.log = JSON.stringify(validation, null, " ");
-                    return resultToSend;
-                } else if (objToEngine.result == 'dissambiguation') {
-                    resultToSend = { action: 'In this site there are many ' + objToEngine.resource + ". Write the same action with one of these words: " };
-                    for (let i = 0; i < objToEngine.category.length - 1; i++) {
-                        resultToSend.action += objToEngine.category[i] + ", ";
-                    }
-                    resultToSend.action += objToEngine.category[objToEngine.category.length - 1];
-                    resultToSend.log = JSON.stringify(objToEngine, null, " ");
-                    return resultToSend;
+                if (!validation.intent.name.includes("list")) {
+                    resultToSend = { action: null };
+                    resultToSend.action = req.session.result ? req.session.result.splice(0, nResult) : resultTelegram[chatId].splice(0, nResult);
+                    resultToSend.format = "true";
                 } else {
-                    //tutto è andato a buon fine
-                    let result = await engine.processIntent(objToEngine);
-                    //console.log("result:");
-                    //console.log(result);
-                    resultToSend = { action: result };
-                    //Debugging Frontend
-                    resultToSend.log = JSON.stringify(objToEngine, null, " ");
-                    //format indica che l'output per Telegram è da formattare
-                    if (objToEngine.query.intent == 'list_about' || objToEngine.query.intent == "list_count")
-                        resultToSend.format = objToEngine.query.intent;
-                    else
-                        resultToSend.format = "true";
-                    return resultToSend;
+                    let objToEngine = MY_FUNCTIONS.newObjToRun(validation, configurationURI);
+
+                    if (objToEngine.result == 'false') {
+                        resultToSend = { action: 'You insert: ' };
+                        for (let i = 0; i < objToEngine.length; i++) {
+                            resultToSend.action += objToEngine[i].value + ", "
+                        }
+                        resultToSend.action += 'but this word is not in the site'
+                        //Debugging Frontend
+                        resultToSend.log = JSON.stringify(validation, null, " ");
+                        return resultToSend;
+                    } else if (objToEngine.result == 'dissambiguation') {
+                        resultToSend = { action: 'In this site there are many ' + objToEngine.resource + ". Write the same action with one of these words: " };
+                        for (let i = 0; i < objToEngine.category.length - 1; i++) {
+                            resultToSend.action += objToEngine.category[i] + ", ";
+                        }
+                        resultToSend.action += objToEngine.category[objToEngine.category.length - 1];
+                        resultToSend.log = JSON.stringify(objToEngine, null, " ");
+                        return resultToSend;
+                    } else {
+                        //tutto è andato a buon fine
+                        setSession(chatId, objToEngine.query.resource.name, req, "resource");
+                        let resultComplete = await engine.processIntent(objToEngine);
+                        let result = resultComplete.splice(0, nResult);
+                        setSession(chatId, resultComplete, req, "result");
+                        //console.log("result:");
+                        //console.log(result);
+                        resultToSend = { action: result };
+                        //Debugging Frontend
+                        resultToSend.log = JSON.stringify(objToEngine, null, " ");
+                        //format indica che l'output per Telegram è da formattare
+                        if (objToEngine.query.intent == 'list_about' || objToEngine.query.intent == "list_count")
+                            resultToSend.format = objToEngine.query.intent;
+                        else
+                            resultToSend.format = "true";
+                    }
                 }
+                return resultToSend;
             }
         }
         else {
@@ -154,7 +171,7 @@ app.post('/', async (req, res) => {
     //console.log(req.body);
     let chatId;
     let sentMessage;
-    if(req.body.message) {
+    if (req.body.message) {
         chatId = req.body.message.chat.id;
         sentMessage = req.body.message.text;
     } else if (req.body.edited_message) {
@@ -181,7 +198,9 @@ app.post('/', async (req, res) => {
                 object.text = "This list is empty";
             }
             else if (resultToSend.format == "true") {
-                object.text = "";
+                resource = req.session.resource ? req.session.resource : resourceTelegram[chatId];
+                object.text = "These are " + resultToSend.action.length + " " + resource + "\n\n";
+                
                 for (let i = 0; i < resultToSend.action.length; i++) {
                     if (resultToSend.action[i].title || resultToSend.action[i].key) {
                         let temp = resultToSend.action[i].title ? resultToSend.action[i].title : resultToSend.action[i].key;
@@ -195,6 +214,10 @@ app.post('/', async (req, res) => {
                     }
                     object.text += "\n";
                 }
+
+                if(resultTelegram[chatId].length!=0)
+                    object.text += "Do you want to know more? Write \"read more\"";
+
             } else if (resultToSend.format == "list_about") {
                 object.text = "";
                 for (let i = 0; i < resultToSend.action.length; i++) {
@@ -203,9 +226,9 @@ app.post('/', async (req, res) => {
                 }
             }
 
-            // max 4096 character for message Telegram
-            // send multiple message in case of a long text
-            let responseBotJson = await sendAsynchronousMessages(object)
+            let responseBot = await MY_FUNCTIONS.post(object, GLOBAL_SETTINGS.TELEGRAM_BOT_URL, 'application/json');
+            let responseBotJson = await responseBot.json();
+            
             if (responseBotJson.ok == false) {
                 object.text = "Error"
                 responseBot = await MY_FUNCTIONS.post(object, GLOBAL_SETTINGS.TELEGRAM_BOT_URL, 'application/json');
@@ -216,31 +239,6 @@ app.post('/', async (req, res) => {
         }
     }
 });
-
-async function sendAsynchronousMessages(object) {
-    let allText = object.text.toString();
-    let n = allText.length;
-    let nMessageToSend = Math.ceil(n / GLOBAL_SETTINGS.TELEGRAM_MAX_MESSAGE);
-    let responseBot;
-    let responseBotJson;
-    let dividePosition;
-    let startPosition = 0;
-    for (let i = 0; i < nMessageToSend; i++) {
-        if (n < GLOBAL_SETTINGS.TELEGRAM_MAX_MESSAGE) {
-            object.text = allText.substring(startPosition);
-        }
-        else {
-            dividePosition = allText.lastIndexOf("\n", ((i + 1) * GLOBAL_SETTINGS.TELEGRAM_MAX_MESSAGE) - 1);
-            object.text = allText.substring(startPosition, dividePosition + 1);
-            startPosition = dividePosition
-        }
-        //console.log(object.text);
-        responseBot = await MY_FUNCTIONS.post(object, GLOBAL_SETTINGS.TELEGRAM_BOT_URL, 'application/json');
-    }
-    responseBotJson = await responseBot.json();
-    //console.log(responseBotJson);
-    return responseBotJson;
-}
 
 app.post('/conversation', async (req, res) => {
     let body = req.body;
