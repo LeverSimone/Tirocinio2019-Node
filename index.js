@@ -43,7 +43,7 @@ function setSession(chatId, valueToSet, req, type) {
             siteTelegram[chatId] = valueToSet;
         else if (type == "result")
             resultTelegram[chatId] = valueToSet;
-        else 
+        else
             resourceTelegram[chatId] = valueToSet;
     } else {
         if (type == "site")
@@ -55,41 +55,49 @@ function setSession(chatId, valueToSet, req, type) {
     }
 }
 
+function openSiteResult(chatId, config, req, resultToSend) {
+    setSession(chatId, config.site.id, req, "site");
+
+    resultToSend.action += "In this site there are: ";
+    config.site.resources.forEach((resource) => {
+        if (resource)
+            resultToSend.action += resource + " \n";
+    })
+    resultToSend.action += "To interact with the site write an action like \"list " + config.site.resources[0] + "\"";
+}
+
 async function conversation(body, req, chatId) {
     if (body.action) {
         //L'azione inserita è un sito
         if (body.action.includes('http')) {
-            let resultToSend = { action: "Site opened: " + body.action };
+            let resultToSend = { action: "Site opened: " + body.action + " \n" };
 
-            //resetto session context
-            //req.session.context = undefined;
-
-            let configurationURI = await MY_FUNCTIONS.takeConfID(body.action);
-            if (configurationURI.error) {
-                return { action: configurationURI.error, error: 500 };
+            //controllo se conosco già il sito
+            let config = await MY_FUNCTIONS.takeConfID(body.action);
+            if (config.error) {
+                return { action: config.error, error: 500 };
             }
-            else if (configurationURI.id) {
-                setSession(chatId, configurationURI.id, req, "site");
+            else if (config.site) {
+                //sito presente in mongoDB, gia conosciuto, viene modificato resultToSend
+                openSiteResult(chatId, config, req, resultToSend);
                 return resultToSend;
             } else {
-
                 //impariamo la struttura del sito da Botify
                 let structureBotify = await MY_FUNCTIONS.openSite(body.action);
                 if (structureBotify.error) {
                     return { action: structureBotify.error, error: 500 };
                 } else {
-                    //inserisco il link del sito nella struttura imparata
+                    //inserisco il link del sito nella struttura imparata per inviarla a Rasa
                     structureBotify._id = body.action;
 
                     //configuriamo Rasa per sapere la struttura del sito in cui ci troviamo
-                    configurationURI = await MY_FUNCTIONS.configureValidator(structureBotify);
-                    if (configurationURI.error) {
-                        return { action: configurationURI.error, error: 500 };
+                    let config = await MY_FUNCTIONS.configureValidator(structureBotify);
+                    if (config.error) {
+                        return { action: config.error, error: 500 };
                     }
                     else {
-                        //salvo in sessione configurationURI
-                        setSession(chatId, configurationURI.id, req, "site");
-
+                        //salvo in sessione l'URI del sito e modifico resultToSend
+                        openSiteResult(chatId, config, req, resultToSend);
                         //Debugging Frontend
                         resultToSend.log = JSON.stringify(structureBotify, null, " ");
 
@@ -110,24 +118,32 @@ async function conversation(body, req, chatId) {
                 return { action: validation.error, error: 500 };
             }
             else {
+                // è un'azione non di tipo lista
                 let resultToSend;
                 if (!validation.intent.name.includes("list")) {
                     resultToSend = { action: null };
                     resultToSend.action = req.session.result ? req.session.result.splice(0, nResult) : resultTelegram[chatId].splice(0, nResult);
                     resultToSend.format = "true";
                 } else {
+                    // è un'azione di tipo lista
                     let objToEngine = MY_FUNCTIONS.newObjToRun(validation, configurationURI);
 
                     if (objToEngine.result == 'false') {
-                        resultToSend = { action: 'You insert: ' };
+                        //inserito qualcosa che non esiste nel sito
+                        resultToSend = { action: 'You insert' };
+                        let wordNotFound = "";
                         for (let i = 0; i < objToEngine.length; i++) {
-                            resultToSend.action += objToEngine[i].value + ", "
+                            wordNotFound += objToEngine[i].value + ", "
                         }
-                        resultToSend.action += 'but this word is not in the site'
+                        if (wordNotFound == "")
+                            resultToSend.action += " words that are not in the site";
+                        else
+                            resultToSend.action += ": \"" + wordNotFound + "\" but this word is not in the site";
                         //Debugging Frontend
                         resultToSend.log = JSON.stringify(validation, null, " ");
                         return resultToSend;
                     } else if (objToEngine.result == 'dissambiguation') {
+                        //esitono più componenti con la resource inserita dell'utente
                         resultToSend = { action: 'In this site there are many ' + objToEngine.resource + ". Write the same action with one of these words: " };
                         for (let i = 0; i < objToEngine.category.length - 1; i++) {
                             resultToSend.action += objToEngine.category[i] + ", ";
@@ -141,8 +157,6 @@ async function conversation(body, req, chatId) {
                         let resultComplete = await engine.processIntent(objToEngine);
                         let result = resultComplete.splice(0, nResult);
                         setSession(chatId, resultComplete, req, "result");
-                        //console.log("result:");
-                        //console.log(result);
                         resultToSend = { action: result };
                         //Debugging Frontend
                         resultToSend.log = JSON.stringify(objToEngine, null, " ");
@@ -200,7 +214,7 @@ app.post('/', async (req, res) => {
             else if (resultToSend.format == "true") {
                 resource = req.session.resource ? req.session.resource : resourceTelegram[chatId];
                 object.text = "These are " + resultToSend.action.length + " " + resource + "\n\n";
-                
+
                 for (let i = 0; i < resultToSend.action.length; i++) {
                     if (resultToSend.action[i].title || resultToSend.action[i].key) {
                         let temp = resultToSend.action[i].title ? resultToSend.action[i].title : resultToSend.action[i].key;
@@ -215,7 +229,7 @@ app.post('/', async (req, res) => {
                     object.text += "\n";
                 }
 
-                if(resultTelegram[chatId].length!=0)
+                if (resultTelegram[chatId].length != 0)
                     object.text += "Do you want to know more? Write \"read more\"";
 
             } else if (resultToSend.format == "list_about") {
@@ -225,10 +239,9 @@ app.post('/', async (req, res) => {
                     object.text += "\n";
                 }
             }
-
             let responseBot = await MY_FUNCTIONS.post(object, GLOBAL_SETTINGS.TELEGRAM_BOT_URL, 'application/json');
             let responseBotJson = await responseBot.json();
-            
+
             if (responseBotJson.ok == false) {
                 object.text = "Error"
                 responseBot = await MY_FUNCTIONS.post(object, GLOBAL_SETTINGS.TELEGRAM_BOT_URL, 'application/json');
