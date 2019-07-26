@@ -32,19 +32,39 @@ async function openSiteRasa(action) {
     }
 }
 
-async function takeConfID(site) {
-    //controlliamo se il server Python conosce già il sito, in caso recuperiamo il conf_id
+async function takeConfFromRasa(site) {
     try {
         site = encodeURIComponent(site);
         let result = await get(GLOBAL_SETTINGS.DESTINATION_URL_RASA + '/site?site=' + site);
-        let conf_id = await result.json();
+        let conf = await result.json();
 
-        return conf_id
+        return conf
     } catch (error) {
         let object = { error: error }
         console.log(error);
         return (object)
     }
+}
+
+async function takeConf(site) {
+    //controlliamo se il server Python conosce già il sito, in caso recuperiamo la struttura del sito
+
+    //controlliamo se è un article prima di tutto
+    //prendo il dominio del sito
+    let posSlash = site.indexOf("/", 8);
+    let siteDomain = site.substring(0, posSlash+1);
+    console.log(siteDomain);
+    siteDomain += "article-structure";
+    console.log(siteDomain);
+    let siteConf = {};
+    //let siteConf = await takeConfFromRasa(siteDomain);
+
+    //se Rasa ha restituito un oggetto vuoto vuol dire che non conosce una struttura per gli articoli di quel sito
+    //prendiamo quindi la struttura di quel esatto link
+    if(!siteConf.site)
+        siteConf = await takeConfFromRasa(site);
+
+    return siteConf;
 }
 
 async function configureValidator(structureBotify) {
@@ -80,7 +100,7 @@ async function askToValide(comand, configurationURI) {
 
 function newObjToRun(validation, link) {
     let object;
-    if (!validation.matching_failed[0] && validation.matching[0]) {
+    if (!validation.matching_failed[0] && validation.matching[0] && !validation.intentNotCompatible) {
         object = {
             url: link,
             component: validation.matching[0].match.component,
@@ -124,6 +144,11 @@ function newObjToRun(validation, link) {
         object = validation.dissambiguate;
         object.result='dissambiguation';
         return object
+    } else if (validation.intentNotCompatible) {
+        //l'intent non e' compatibile con i componenti del sito
+        object = validation.intentNotCompatible
+        object.result='notCompatible'
+        return object;
     }
     else {
         //setto che il Matching è fallito
@@ -133,4 +158,4 @@ function newObjToRun(validation, link) {
     }
 }
 
-module.exports = {post, configureValidator, openSiteRasa, askToValide, takeConfID, newObjToRun};
+module.exports = {post, configureValidator, openSiteRasa, askToValide, takeConf, newObjToRun};

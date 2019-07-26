@@ -36,6 +36,16 @@ app.get('/', (req, res) => {
     res.json({ status: 'ok' });
 })
 
+function clearSession(chatId, req) {
+    if (chatId) {
+        resultTelegram[chatId] = [];
+        resourceTelegram[chatId] = null;
+    } else {
+        req.session.result = [];
+        req.session.resource = null;
+    }
+}
+
 //Settare contenuto per la sessione per l'end point web e per l'array in memory per Telegram
 function setSession(chatId, valueToSet, req, type) {
     if (chatId) {
@@ -55,15 +65,30 @@ function setSession(chatId, valueToSet, req, type) {
     }
 }
 
+//salva il link del sito in sessione e crea una risposta contente gli elementi del sito con le sue resource
 function openSiteResult(chatId, config, req, resultToSend) {
     setSession(chatId, config.site.id, req, "site");
+    clearSession(chatId, req);
+    let resourceFound = "false";
 
-    resultToSend.action += "In this site there are: ";
-    config.site.resources.forEach((resource) => {
-        if (resource)
-            resultToSend.action += resource + " \n";
+    resultToSend.action += "In this site there are: \n";
+    config.site.comp_res.forEach((comp_res) => {
+        if (comp_res.component) {
+            if (comp_res.component == "list")
+                resourceFound = comp_res.resources[0];
+            resultToSend.action += comp_res.component;
+            if (comp_res.resources.length > 0) {
+                resultToSend.action += " about: "
+                comp_res.resources.forEach((resource) => {
+                    if(resource) 
+                        resultToSend.action += resource + " ";
+                })
+            }
+        }
+        resultToSend.action += "\n";
     })
-    resultToSend.action += "To interact with the site write an action like \"list " + config.site.resources[0] + "\"";
+    if (resourceFound != "false")
+        resultToSend.action += "To interact with the site write an action like \"list " + resourceFound + "\"";
 }
 
 async function conversation(body, req, chatId) {
@@ -73,7 +98,7 @@ async function conversation(body, req, chatId) {
             let resultToSend = { action: "Site opened: " + body.action + " \n" };
 
             //controllo se conosco già il sito
-            let config = await MY_FUNCTIONS.takeConfID(body.action);
+            let config = await MY_FUNCTIONS.takeConf(body.action);
             if (config.error) {
                 return { action: config.error, error: 500 };
             }
@@ -108,7 +133,6 @@ async function conversation(body, req, chatId) {
         }
         //è un'altro tipo di azione, un comando, ex: "list me proposals", chiamo Rasa per fare la validazione
         else if (req.session.configurationURI || siteTelegram[chatId]) {
-
             let configurationURI = req.session.configurationURI ? req.session.configurationURI : siteTelegram[chatId];
 
             //chiamo il server Rasa per fare la validazione dell'input utente
@@ -118,14 +142,20 @@ async function conversation(body, req, chatId) {
                 return { action: validation.error, error: 500 };
             }
             else {
-                // è un'azione non di tipo lista
                 let resultToSend;
-                if (!validation.intent.name.includes("list")) {
-                    resultToSend = { action: null };
-                    resultToSend.action = req.session.result ? req.session.result.splice(0, nResult) : resultTelegram[chatId].splice(0, nResult);
-                    resultToSend.format = "true";
+                // non è un'azione di tipo lista, e' read more
+                if (validation.intent == "read_more") {
+                    if (req.session.result.length > 0 || (resultTelegram[chatId] && resultTelegram[chatId].length > 0) ) {
+                        resultToSend = { action: null };
+                        resultToSend.action = req.session.result ? req.session.result.splice(0, nResult) : resultTelegram[chatId].splice(0, nResult);
+                        resultToSend.format = "true";
+                    } else {
+                        resultToSend = { action: "You can't \"read more\" in this moment" };
+                        resultToSend.format = "false";
+                    }
                 } else {
                     // è un'azione di tipo lista
+                    clearSession(chatId, req);
                     let objToEngine = MY_FUNCTIONS.newObjToRun(validation, configurationURI);
 
                     if (objToEngine.result == 'false') {
@@ -151,6 +181,9 @@ async function conversation(body, req, chatId) {
                         resultToSend.action += objToEngine.category[objToEngine.category.length - 1];
                         resultToSend.log = JSON.stringify(objToEngine, null, " ");
                         return resultToSend;
+                    } else if (objToEngine.result == 'notCompatible') {
+                        //l'intent non e' compatibile con i componenti del sito
+                        resultToSend = { action: 'In this site you can\'t ' + objToEngine };
                     } else {
                         //tutto è andato a buon fine
                         setSession(chatId, objToEngine.query.resource.name, req, "resource");
