@@ -145,7 +145,7 @@ async function conversation(body, req, chatId) {
                 let resultToSend;
                 // non è un'azione di tipo lista, e' read more
                 if (validation.intent == "read_more") {
-                    if (req.session.result.length > 0 || (resultTelegram[chatId] && resultTelegram[chatId].length > 0) ) {
+                    if ((req.session.result && req.session.result.length > 0 ) || (resultTelegram[chatId] && resultTelegram[chatId].length > 0) ) {
                         resultToSend = { action: null };
                         resultToSend.action = req.session.result ? req.session.result.splice(0, nResult) : resultTelegram[chatId].splice(0, nResult);
                         resultToSend.format = "true";
