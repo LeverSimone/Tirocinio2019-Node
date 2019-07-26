@@ -36,7 +36,7 @@ app.get('/', (req, res) => {
     res.json({ status: 'ok' });
 })
 
-//Settare contenuto per la sessione API standard e per l'array in memory per Telegram
+//Settare contenuto per la sessione per l'end point web e per l'array in memory per Telegram
 function setSession(chatId, valueToSet, req, type) {
     if (chatId) {
         if (type == "site")
@@ -83,7 +83,7 @@ async function conversation(body, req, chatId) {
                 return resultToSend;
             } else {
                 //impariamo la struttura del sito da Botify
-                let structureBotify = await MY_FUNCTIONS.openSite(body.action);
+                let structureBotify = await MY_FUNCTIONS.openSiteRasa(body.action);
                 if (structureBotify.error) {
                     return { action: structureBotify.error, error: 500 };
                 } else {

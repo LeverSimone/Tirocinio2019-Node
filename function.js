@@ -16,7 +16,7 @@ function get(url) {
     return fetch(url);
 }
 
-async function openSite(action) {
+async function openSiteRasa(action) {
     let structureBotify = [];
     let objToPuppetteer = { site: action };
 
@@ -133,4 +133,4 @@ function newObjToRun(validation, link) {
     }
 }
 
-module.exports = {post, configureValidator, openSite, askToValide, takeConfID, newObjToRun};
+module.exports = {post, configureValidator, openSiteRasa, askToValide, takeConfID, newObjToRun};
