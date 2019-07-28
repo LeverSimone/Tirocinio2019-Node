@@ -16,15 +16,18 @@ function get(url) {
     return fetch(url);
 }
 
-async function openSiteRasa(action) {
+async function openSitePuppeteer(action) {
     let structureBotify = [];
     let objToPuppetteer = { site: action };
 
     try {
         let result = await post(objToPuppetteer, GLOBAL_SETTINGS.DESTINATION_URL_PUPPETEER + "/opensite", 'application/json');
         structureBotify = await result.json();
-
-        return structureBotify;
+        if (result.status == 200) {
+            return structureBotify;
+        }
+        else
+            throw structureBotify.statusText;
     } catch (error) {
         let object = { error: error }
         console.log(error);
@@ -37,7 +40,6 @@ async function takeConfFromRasa(site) {
         site = encodeURIComponent(site);
         let result = await get(GLOBAL_SETTINGS.DESTINATION_URL_RASA + '/site?site=' + site);
         let conf = await result.json();
-
         return conf
     } catch (error) {
         let object = { error: error }
@@ -48,22 +50,38 @@ async function takeConfFromRasa(site) {
 
 async function takeConf(site) {
     //controlliamo se il server Python conosce già il sito, in caso recuperiamo la struttura del sito
-
+    let result;
+    let resultJSON;
     //controlliamo se è un article prima di tutto
     //prendo il dominio del sito
     let posSlash = site.indexOf("/", 8);
-    let siteDomain = site.substring(0, posSlash+1);
-    console.log(siteDomain);
-    siteDomain += "article-structure";
-    console.log(siteDomain);
-    let siteConf = {};
-    //let siteConf = await takeConfFromRasa(siteDomain);
-
-    //se Rasa ha restituito un oggetto vuoto vuol dire che non conosce una struttura per gli articoli di quel sito
-    //prendiamo quindi la struttura di quel esatto link
-    if(!siteConf.site)
+    let siteDomainArticle = site.substring(0, posSlash + 1);
+    console.log(siteDomainArticle);
+    siteDomainArticle += "article-structure";
+    console.log(siteDomainArticle);
+    //let siteConf = {};
+    let siteConf = await takeConfFromRasa(siteDomainArticle);
+    if (siteConf.error)
+        return siteConf
+    //se esiste, esiste un oggetto che rappresenta gli articoli per quel dominio
+    if (siteConf.site) {
+        //chiamo Puppeteer e invio il link e l'oggetto inviato per capire se sono compatibili, in caso affermativo la pagina è un article
+        siteConf.site.id = site;
+        console.log("siteConf");
+        console.log(siteConf);
+        result = await post(siteConf, GLOBAL_SETTINGS.DESTINATION_URL_PUPPETEER + "/checkstructure", 'application/json');
+        resultJSON = await result.json();
+        siteConf.site.id = siteDomainArticle;
+    }
+    console.log("resultJSON");
+    console.log(resultJSON);
+    if (!siteConf.site || resultJSON.result == false) {
+        //se Rasa ha restituito un oggetto vuoto o non è un article
+        //prendiamo la struttura di quel esatto link
         siteConf = await takeConfFromRasa(site);
-
+        if (siteConf.error)
+            return siteConf
+    }
     return siteConf;
 }
 
@@ -100,7 +118,14 @@ async function askToValide(comand, configurationURI) {
 
 function newObjToRun(validation, link) {
     let object;
-    if (!validation.matching_failed[0] && validation.matching[0] && !validation.intentNotCompatible) {
+    console.log(validation)
+    if (validation.intentNotCompatible) {
+        //l'intent non e' compatibile con i componenti del sito
+        object = {result: 'notCompatible'};
+        object.intent = validation.intentNotCompatible
+        return object;
+    }
+    if (!validation.matching_failed[0] && validation.matching[0]) {
         object = {
             url: link,
             component: validation.matching[0].match.component,
@@ -117,8 +142,8 @@ function newObjToRun(validation, link) {
         };
         //prendo operation e attr-value (ex: carlos)
         validation.entities.forEach(entities => {
-            if(entities.entity.includes("op") || entities.entity == "attr-value") {    
-                object.query.parameters.push({name: entities.entity, value: entities.value});
+            if (entities.entity.includes("op") || entities.entity == "attr-value") {
+                object.query.parameters.push({ name: entities.entity, value: entities.value });
             }
         });
         //prendo resource e attributes dall'oggetto
@@ -129,33 +154,28 @@ function newObjToRun(validation, link) {
                 object.query.resource.selector = entities.match.selector;
                 //inserisco tutti gli attributes compatibili con la risorsa inserita
                 entities.match.attributes.forEach(attributes => {
-                    object.query.resource.attributes.push({name: attributes.name, selector: attributes.selector});
+                    object.query.resource.attributes.push({ name: attributes.name, selector: attributes.selector });
                 });
             } //inserisco gli attributes indicati dall'utente
             else if (entities.entity.entity == "attribute") {
-                object.query.parameters.push({name: "attribute", value: [entities.match.name]});
+                object.query.parameters.push({ name: "attribute", value: [entities.match.name] });
             }
         });
         //setto che tutto è andato a buon fine
-        object.result='true';
+        object.result = 'true';
         return object;
     } else if (validation.dissambiguate && validation.dissambiguate.category[0] && validation.intent.name != "list_read_more") {
         //Bisogna fare dissambiguation
         object = validation.dissambiguate;
-        object.result='dissambiguation';
+        object.result = 'dissambiguation';
         return object
-    } else if (validation.intentNotCompatible) {
-        //l'intent non e' compatibile con i componenti del sito
-        object = validation.intentNotCompatible
-        object.result='notCompatible'
-        return object;
     }
     else {
         //setto che il Matching è fallito
         object = validation.matching_failed;
-        object.result='false'
+        object.result = 'false'
         return object;
     }
 }
 
-module.exports = {post, configureValidator, openSiteRasa, askToValide, takeConf, newObjToRun};
+module.exports = { post, configureValidator, openSitePuppeteer, askToValide, takeConf, newObjToRun };

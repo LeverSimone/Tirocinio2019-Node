@@ -103,12 +103,16 @@ async function conversation(body, req, chatId) {
                 return { action: config.error, error: 500 };
             }
             else if (config.site) {
-                //sito presente in mongoDB, gia conosciuto, viene modificato resultToSend
+                //sito gia' presente in mongoDB, viene modificato resultToSend per scrivere all'utente
                 openSiteResult(chatId, config, req, resultToSend);
                 return resultToSend;
             } else {
                 //impariamo la struttura del sito da Botify
-                let structureBotify = await MY_FUNCTIONS.openSiteRasa(body.action);
+                console.log("body.action")
+                console.log(body.action)
+                let structureBotify = await MY_FUNCTIONS.openSitePuppeteer(body.action);
+                console.log("structureBotify")
+                console.log(structureBotify)
                 if (structureBotify.error) {
                     return { action: structureBotify.error, error: 500 };
                 } else {
@@ -156,6 +160,7 @@ async function conversation(body, req, chatId) {
                 } else {
                     // è un'azione di tipo lista
                     clearSession(chatId, req);
+                    console.log(validation);
                     let objToEngine = MY_FUNCTIONS.newObjToRun(validation, configurationURI);
 
                     if (objToEngine.result == 'false') {
@@ -183,7 +188,7 @@ async function conversation(body, req, chatId) {
                         return resultToSend;
                     } else if (objToEngine.result == 'notCompatible') {
                         //l'intent non e' compatibile con i componenti del sito
-                        resultToSend = { action: 'In this site you can\'t ' + objToEngine };
+                        resultToSend = { action: 'In this site you can\'t ' + objToEngine.intent.substr(0, objToEngine.intent.indexOf('_'))};
                     } else {
                         //tutto è andato a buon fine
                         setSession(chatId, objToEngine.query.resource.name, req, "resource");
