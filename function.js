@@ -164,7 +164,7 @@ function newObjToRun(validation, link) {
         //setto che tutto è andato a buon fine
         object.result = 'true';
         return object;
-    } else if (validation.dissambiguate && validation.dissambiguate.category[0] && validation.intent.name != "list_read_more") {
+    } else if (validation.dissambiguate && validation.dissambiguate.category[0]) {
         //Bisogna fare dissambiguation
         object = validation.dissambiguate;
         object.result = 'dissambiguation';

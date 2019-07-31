@@ -148,15 +148,18 @@ async function conversation(body, req, chatId) {
             else {
                 let resultToSend;
                 // non è un'azione di tipo lista, e' read more
-                if (validation.intent == "read_more") {
+                if (validation.intent == "show_more") {
                     if ((req.session.result && req.session.result.length > 0 ) || (resultTelegram[chatId] && resultTelegram[chatId].length > 0) ) {
                         resultToSend = { action: null };
                         resultToSend.action = req.session.result ? req.session.result.splice(0, nResult) : resultTelegram[chatId].splice(0, nResult);
                         resultToSend.format = "true";
                     } else {
-                        resultToSend = { action: "You can't \"read more\" in this moment" };
+                        resultToSend = { action: "You can't \"show more\" in this moment" };
                         resultToSend.format = "false";
                     }
+                } else if (validation.intent == "article_read") {
+                    clearSession(chatId, req);
+                    //creare oggetto da mandare a conweb_engine per eseguire lettura
                 } else {
                     // è un'azione di tipo lista
                     clearSession(chatId, req);
@@ -268,7 +271,7 @@ app.post('/', async (req, res) => {
                 }
 
                 if (resultTelegram[chatId].length != 0)
-                    object.text += "Do you want to know more? Write \"read more\"";
+                    object.text += "Do you want to know more? Write \"show more\"";
 
             } else if (resultToSend.format == "list_about") {
                 object.text = "";
