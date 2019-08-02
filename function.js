@@ -48,6 +48,19 @@ async function takeConfFromRasa(site) {
     }
 }
 
+async function takeMatchingConfFromRasa(site) {
+    try {
+        site = encodeURIComponent(site);
+        let result = await get(GLOBAL_SETTINGS.DESTINATION_URL_RASA + '/sites?site=' + site);
+        let conf = await result.json();
+        return conf
+    } catch (error) {
+        let object = { error: error }
+        console.log(error);
+        return (object)
+    }
+}
+
 async function takeConf(site) {
     //controlliamo se il server Python conosce già il sito, in caso recuperiamo la struttura del sito
     let result;
@@ -55,9 +68,9 @@ async function takeConf(site) {
     //controlliamo se è un article prima di tutto
     //prendo il dominio del sito
     let posSlash = site.indexOf("/", 8);
-    let siteDomainArticle = site.substring(0, posSlash + 1);
-    console.log(siteDomainArticle);
-    siteDomainArticle += "article-structure";
+    let siteDomain = site.substring(0, posSlash + 1);
+    console.log(siteDomain);
+    let siteDomainArticle = siteDomain + "article-structure";
     console.log(siteDomainArticle);
     //let siteConf = {};
     let siteConf = await takeConfFromRasa(siteDomainArticle);
@@ -77,11 +90,10 @@ async function takeConf(site) {
     console.log(resultJSON);
     if (!siteConf.site || resultJSON.result == false) {
         //se Rasa ha restituito un oggetto vuoto o non è un article
-        //prendiamo la struttura di quel esatto link
-        siteConf = await takeConfFromRasa(site);
-        if (siteConf.error)
-            return siteConf
+        //we ask for all object of this domain and we take the one with the longest matching link
+        siteConf = await takeMatchingConfFromRasa(site);
     }
+    console.log(siteConf);
     return siteConf;
 }
 
@@ -121,7 +133,7 @@ function newObjToRun(validation, link) {
     console.log(validation)
     if (validation.intentNotCompatible) {
         //l'intent non e' compatibile con i componenti del sito
-        object = {result: 'notCompatible'};
+        object = { result: 'notCompatible' };
         object.intent = validation.intentNotCompatible
         return object;
     }
