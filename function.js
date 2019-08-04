@@ -79,12 +79,14 @@ async function takeConf(site) {
     //se esiste, esiste un oggetto che rappresenta gli articoli per quel dominio
     if (siteConf.site) {
         //chiamo Puppeteer e invio il link e l'oggetto inviato per capire se sono compatibili, in caso affermativo la pagina è un article
+        //siteObject indica il link dell'oggetto su MongoDB
+        siteConf.site.siteObject = siteConf.site.id;
+        //inserisco il link reale
         siteConf.site.id = site;
         console.log("siteConf");
         console.log(siteConf);
         result = await post(siteConf, GLOBAL_SETTINGS.DESTINATION_URL_PUPPETEER + "/checkstructure", 'application/json');
         resultJSON = await result.json();
-        siteConf.site.id = siteDomainArticle;
     }
     console.log("resultJSON");
     console.log(resultJSON);
@@ -92,6 +94,10 @@ async function takeConf(site) {
         //se Rasa ha restituito un oggetto vuoto o non è un article
         //we ask for all object of this domain and we take the one with the longest matching link
         siteConf = await takeMatchingConfFromRasa(site);
+        //siteObject indica il link dell'oggetto su MongoDB
+        siteConf.site.siteObject = siteConf.site.id;
+        //inserisco il link reale
+        siteConf.site.id = site;
     }
     console.log(siteConf);
     return siteConf;
