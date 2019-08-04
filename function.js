@@ -87,10 +87,12 @@ async function takeConf(site) {
         //se Rasa ha restituito un oggetto vuoto o non è un article
         //we ask for all object of this domain and we take the one with the longest matching link
         siteConf = await takeMatchingConfFromRasa(site);
-        //siteObject indica il link dell'oggetto su MongoDB
-        siteConf.site.siteObject = siteConf.site.id;
-        //inserisco il link reale
-        siteConf.site.id = site;
+        if (siteConf.site) {
+            //siteObject indica il link dell'oggetto su MongoDB
+            siteConf.site.siteObject = siteConf.site.id;
+            //inserisco il link reale
+            siteConf.site.id = site;
+        }
     }
     return siteConf;
 }

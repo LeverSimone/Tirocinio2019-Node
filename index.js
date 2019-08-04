@@ -75,6 +75,8 @@ function setSession(chatId, valueToSet, req, type) {
 function openSiteResult(chatId, config, req, resultToSend) {
     setSession(chatId, config.site.id, req, "site");
     setSession(chatId, config.site.siteObject, req, "objectLink");
+    console.log(req.session.configurationURI)
+    console.log(req.session.objectRasaURI)
     clearSession(chatId, req);
     let resourceFound = "false";
 
@@ -129,6 +131,7 @@ async function conversation(body, req, chatId) {
                     }
                     else {
                         //salvo in sessione l'URI del sito e modifico resultToSend
+                        config.site.siteObject = config.site.id;
                         openSiteResult(chatId, config, req, resultToSend);
                         //Debugging Frontend
                         resultToSend.log = JSON.stringify(structureBotify, null, " ");
