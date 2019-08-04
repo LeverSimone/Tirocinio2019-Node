@@ -28,7 +28,7 @@ var resultTelegram = [];
 var resourceTelegram = [];
 
 //numero di risultati da ritornare
-var nResult = 5;
+const nResult = 5;
 
 app.use('/', express.static('public'));
 
@@ -115,11 +115,7 @@ async function conversation(body, req, chatId) {
                 return resultToSend;
             } else {
                 //impariamo la struttura del sito da Botify
-                console.log("body.action")
-                console.log(body.action)
                 let structureBotify = await MY_FUNCTIONS.openSitePuppeteer(body.action);
-                console.log("structureBotify")
-                console.log(structureBotify)
                 if (structureBotify.error) {
                     return { action: structureBotify.error, error: 500 };
                 } else {
@@ -147,11 +143,6 @@ async function conversation(body, req, chatId) {
             let configurationURI = req.session.configurationURI ? req.session.configurationURI : siteTelegram[chatId];
             let objectRasaURI = req.session.objectRasaURI ? req.session.objectRasaURI : objectRasaURITelegram[chatId];
 
-            console.log("configurationURI");
-            console.log(configurationURI);
-            console.log("objectRasaURI");
-            console.log(objectRasaURI);
-
             //chiamo il server Rasa per fare la validazione dell'input utente
             let validation = await MY_FUNCTIONS.askToValide(body.action, objectRasaURI);
 
@@ -178,7 +169,6 @@ async function conversation(body, req, chatId) {
                 } else {
                     // è un'azione di tipo lista
                     clearSession(chatId, req);
-                    console.log(validation);
                     let objToEngine = MY_FUNCTIONS.newObjToRun(validation, configurationURI);
 
                     if (objToEngine.result == 'false') {
@@ -312,7 +302,6 @@ app.post('/', async (req, res) => {
 app.post('/conversation', async (req, res) => {
     let body = req.body;
     let resultToSend = await conversation(body, req);
-    console.log(resultToSend)
 
     if (resultToSend.error) {
         res.status(resultToSend.error).send(resultToSend.action);

@@ -38,7 +38,7 @@ async function openSitePuppeteer(action) {
 async function takeConfFromRasa(site) {
     try {
         site = encodeURIComponent(site);
-        let result = await get(GLOBAL_SETTINGS.DESTINATION_URL_RASA + '/site?site=' + site);
+        let result = await get(GLOBAL_SETTINGS.DESTINATION_URL_RASA + '/site_article?site=' + site);
         let conf = await result.json();
         return conf
     } catch (error) {
@@ -51,7 +51,7 @@ async function takeConfFromRasa(site) {
 async function takeMatchingConfFromRasa(site) {
     try {
         site = encodeURIComponent(site);
-        let result = await get(GLOBAL_SETTINGS.DESTINATION_URL_RASA + '/sites?site=' + site);
+        let result = await get(GLOBAL_SETTINGS.DESTINATION_URL_RASA + '/site?site=' + site);
         let conf = await result.json();
         return conf
     } catch (error) {
@@ -69,10 +69,7 @@ async function takeConf(site) {
     //prendo il dominio del sito
     let posSlash = site.indexOf("/", 8);
     let siteDomain = site.substring(0, posSlash + 1);
-    console.log(siteDomain);
     let siteDomainArticle = siteDomain + "article-structure";
-    console.log(siteDomainArticle);
-    //let siteConf = {};
     let siteConf = await takeConfFromRasa(siteDomainArticle);
     if (siteConf.error)
         return siteConf
@@ -83,13 +80,9 @@ async function takeConf(site) {
         siteConf.site.siteObject = siteConf.site.id;
         //inserisco il link reale
         siteConf.site.id = site;
-        console.log("siteConf");
-        console.log(siteConf);
         result = await post(siteConf, GLOBAL_SETTINGS.DESTINATION_URL_PUPPETEER + "/checkstructure", 'application/json');
         resultJSON = await result.json();
     }
-    console.log("resultJSON");
-    console.log(resultJSON);
     if (!siteConf.site || resultJSON.result == false) {
         //se Rasa ha restituito un oggetto vuoto o non è un article
         //we ask for all object of this domain and we take the one with the longest matching link
@@ -99,7 +92,6 @@ async function takeConf(site) {
         //inserisco il link reale
         siteConf.site.id = site;
     }
-    console.log(siteConf);
     return siteConf;
 }
 
@@ -136,7 +128,6 @@ async function askToValide(comand, configurationURI) {
 
 function newObjToRun(validation, link) {
     let object;
-    console.log(validation)
     if (validation.intentNotCompatible) {
         //l'intent non e' compatibile con i componenti del sito
         object = { result: 'notCompatible' };
