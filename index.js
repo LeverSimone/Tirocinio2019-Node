@@ -24,6 +24,8 @@ var siteTelegram = [];
 var objectRasaURITelegram = [];
 //Array in memory per mantenere l'associazione tra la chat e l'oggetto di risposta di cui si sta parlando
 var resultTelegram = [];
+//Array in memory per mantenere l'associazione tra la chat e l'ultima lista di risposta
+var lastResultTelegram = []
 //Array in memory per mantenere l'associazione tra la chat e la resource di cui si sta parlando
 var resourceTelegram = [];
 
@@ -57,6 +59,8 @@ function setSession(chatId, valueToSet, req, type) {
             objectRasaURITelegram[chatId] = valueToSet;
         else if (type == "result")
             resultTelegram[chatId] = valueToSet;
+        else if (type == "lastResult")
+            lastResultTelegram[chatId] = valueToSet;
         else
             resourceTelegram[chatId] = valueToSet;
     } else {
@@ -66,6 +70,8 @@ function setSession(chatId, valueToSet, req, type) {
             req.session.objectRasaURI = valueToSet;
         else if (type == "result")
             req.session.result = valueToSet;
+        else if (type == "lastResult")
+            req.session.lastResult = valueToSet;
         else
             req.session.resource = valueToSet;
     }
@@ -169,6 +175,24 @@ async function conversation(body, req, chatId) {
                     //creare oggetto da mandare a conweb_engine per eseguire lettura
                     resultToSend = { action: "You can't \"read\" in this moment. This functionality is not complete" };
                     resultToSend.format = "false";
+                } else if (validation.intent == "open_element") {
+                    if (validation.position) {
+                        let position = validation.position - 1;
+                        //salva la lista di news trovate e guarda se nella posizione esiste bot-attribute:link
+                        let lastList = req.session.lastResult ? req.session.lastResult : lastResultTelegram[chatId];
+                        if (position >= 0 && position < lastList.length) {
+                            if (lastList[position].link) {
+                                resultToSend = { action: "I found this link:" + lastList[position].link };
+                                resultToSend.format = "false";
+                            }
+                        } else {
+                            resultToSend = { action: "You can't open this element" };
+                            resultToSend.format = "false";
+                        }
+                    } else {
+                        resultToSend = { action: "I don't understand what element you want to open" };
+                        resultToSend.format = "false";
+                    }
                 } else {
                     // è un'azione di tipo lista
                     clearSession(chatId, req);
@@ -206,6 +230,7 @@ async function conversation(body, req, chatId) {
                         let resultComplete = await engine.processIntent(objToEngine);
                         let result = resultComplete.splice(0, nResult);
                         setSession(chatId, resultComplete, req, "result");
+                        setSession(chatId, result, req, "lastResult");
                         resultToSend = { action: result };
                         //Debugging Frontend
                         resultToSend.log = JSON.stringify(objToEngine, null, " ");
