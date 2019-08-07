@@ -43,9 +43,11 @@ app.get('/', (req, res) => {
 function clearSession(chatId, req) {
     if (chatId) {
         resultTelegram[chatId] = [];
+        lastResultTelegram[chatId] = [];
         resourceTelegram[chatId] = null;
     } else {
         req.session.result = [];
+        req.session.lastResult = [];
         req.session.resource = null;
     }
 }
@@ -106,46 +108,51 @@ function openSiteResult(chatId, config, req, resultToSend) {
         resultToSend.action += "To interact with the site write an action like \"list " + resourceFound + "\"";
 }
 
+async function openSite(link, req, chatId) {
+    let resultToSend = { action: "Site opened: " + link + " \n" };
+
+    //controllo se conosco già il sito
+    let config = await MY_FUNCTIONS.takeConf(link);
+    if (config.error) {
+        return { action: config.error, error: 500 };
+    }
+    else if (config.site) {
+        //sito gia' presente in mongoDB, salvo in sessione e viene modificato resultToSend per scrivere all'utente
+        openSiteResult(chatId, config, req, resultToSend);
+        return resultToSend;
+    } else {
+        //impariamo la struttura del sito da Botify
+        let structureBotify = await MY_FUNCTIONS.openSitePuppeteer(link);
+        if (structureBotify.error) {
+            return { action: structureBotify.error, error: 500 };
+        } else {
+            //inserisco il link del sito nella struttura imparata per inviarla a Rasa
+            structureBotify._id = link;
+
+            //configuriamo Rasa per sapere la struttura del sito in cui ci troviamo
+            let config = await MY_FUNCTIONS.configureValidator(structureBotify);
+            if (config.error) {
+                return { action: config.error, error: 500 };
+            }
+            else {
+                //salvo in sessione l'URI del sito e modifico resultToSend
+                config.site.siteObject = config.site.id;
+                openSiteResult(chatId, config, req, resultToSend);
+                //Debugging Frontend
+                resultToSend.log = JSON.stringify(structureBotify, null, " ");
+
+                return resultToSend;
+            }
+        }
+    }
+}
+
 async function conversation(body, req, chatId) {
     if (body.action) {
         //L'azione inserita è un sito
         if (body.action.includes('http')) {
-            let resultToSend = { action: "Site opened: " + body.action + " \n" };
-
-            //controllo se conosco già il sito
-            let config = await MY_FUNCTIONS.takeConf(body.action);
-            if (config.error) {
-                return { action: config.error, error: 500 };
-            }
-            else if (config.site) {
-                //sito gia' presente in mongoDB, salvo in sessione e viene modificato resultToSend per scrivere all'utente
-                openSiteResult(chatId, config, req, resultToSend);
-                return resultToSend;
-            } else {
-                //impariamo la struttura del sito da Botify
-                let structureBotify = await MY_FUNCTIONS.openSitePuppeteer(body.action);
-                if (structureBotify.error) {
-                    return { action: structureBotify.error, error: 500 };
-                } else {
-                    //inserisco il link del sito nella struttura imparata per inviarla a Rasa
-                    structureBotify._id = body.action;
-
-                    //configuriamo Rasa per sapere la struttura del sito in cui ci troviamo
-                    let config = await MY_FUNCTIONS.configureValidator(structureBotify);
-                    if (config.error) {
-                        return { action: config.error, error: 500 };
-                    }
-                    else {
-                        //salvo in sessione l'URI del sito e modifico resultToSend
-                        config.site.siteObject = config.site.id;
-                        openSiteResult(chatId, config, req, resultToSend);
-                        //Debugging Frontend
-                        resultToSend.log = JSON.stringify(structureBotify, null, " ");
-
-                        return resultToSend;
-                    }
-                }
-            }
+            let resultToSend = openSite(body.action, req, chatId);
+            return resultToSend;
         }
         //è un'altro tipo di azione, un comando, ex: "list me proposals", chiamo Rasa per fare la validazione
         else if (req.session.configurationURI || siteTelegram[chatId]) {
@@ -182,7 +189,9 @@ async function conversation(body, req, chatId) {
                         let lastList = req.session.lastResult ? req.session.lastResult : lastResultTelegram[chatId];
                         if (position >= 0 && position < lastList.length) {
                             if (lastList[position].link) {
-                                resultToSend = { action: "I found this link:" + lastList[position].link };
+                                //resultToSend = { action: "I found this link:" + lastList[position].link };
+                                //resultToSend.format = "false";
+                                resultToSend = openSite(lastList[position].link, req, chatId);
                                 resultToSend.format = "false";
                             }
                         } else {
@@ -304,7 +313,7 @@ app.post('/', async (req, res) => {
                 }
 
                 if (resultTelegram[chatId].length != 0)
-                    object.text += "Do you want to know more? Write \"show more\"";
+                    object.text += "Do you want to know more? Write \"show more\"\nDo you want to open an element? Write for example: \"open the element number 2\"";
 
             } else if (resultToSend.format == "list_about") {
                 object.text = "";
