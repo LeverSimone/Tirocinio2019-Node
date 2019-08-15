@@ -187,13 +187,10 @@ async function conversation(body, req, chatId) {
                         let position = validation.position - 1;
                         //salva la lista di news trovate e guarda se nella posizione esiste bot-attribute:link
                         let lastList = req.session.lastResult ? req.session.lastResult : lastResultTelegram[chatId];
-                        if (position >= 0 && position < lastList.length) {
-                            if (lastList[position].link) {
-                                //resultToSend = { action: "I found this link:" + lastList[position].link };
-                                //resultToSend.format = "false";
+                        if (position >= 0 && position < lastList.length && lastList[position].link) {
+                                //link founded, go to open it
                                 resultToSend = openSite(lastList[position].link, req, chatId);
                                 resultToSend.format = "false";
-                            }
                         } else {
                             resultToSend = { action: "You can't open this element" };
                             resultToSend.format = "false";
