@@ -310,7 +310,7 @@ app.post('/', async (req, res) => {
                 }
 
                 if (resultTelegram[chatId].length != 0)
-                    object.text += "Do you want to know more? Write \"show more\"\nDo you want to open an element? Write for example: \"open the element number 2\"";
+                    object.text += "Do you want to know more? Write \"show more\"\nDo you want to open an element? Write for example: \"open element 2\"";
 
             } else if (resultToSend.format == "list_about") {
                 object.text = "";
