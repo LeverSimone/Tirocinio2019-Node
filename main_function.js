@@ -2,56 +2,18 @@ const engine = require('conweb-engine/components/engine');
 
 const DATA = require("./data.js");
 const MY_FUNCTIONS = require("./function.js");
+const OPENSITE = require("./opensite.js");
+const LIST = require("./component/list.js");
+const ARTICLE = require("./component/article.js");
 
 //numero di risultati da ritornare
 const nResult = 5;
-
-async function openSite(link, req, chatId) {
-    let resultToSend = { action: "Site opened: " + link + " \n" };
-
-    //controllo se conosco già il sito
-    let config = await MY_FUNCTIONS.takeConf(link);
-    if (config.error) {
-        return { action: config.error, error: 500 };
-    }
-    else if (config.site) {
-        //sito gia' presente in mongoDB, salvo in sessione e viene modificato resultToSend per scrivere all'utente
-        DATA.openSiteData(chatId, req, config);
-        resultToSend = MY_FUNCTIONS.createOutputSiteContent(config, resultToSend);
-        return resultToSend;
-    } else {
-        //impariamo la struttura del sito da Botify
-        let structureBotify = await MY_FUNCTIONS.openSitePuppeteer(link);
-        if (structureBotify.error) {
-            return { action: structureBotify.error, error: 500 };
-        } else {
-            //inserisco il link del sito nella struttura imparata per inviarla a Rasa
-            structureBotify._id = link;
-
-            //configuriamo Rasa per sapere la struttura del sito in cui ci troviamo
-            let config = await MY_FUNCTIONS.configureValidator(structureBotify);
-            if (config.error) {
-                return { action: config.error, error: 500 };
-            }
-            else {
-                //salvo in sessione l'URI del sito e modifico resultToSend
-                config.site.siteObject = config.site.id;
-                DATA.openSiteData(chatId, req, config);
-                resultToSend = MY_FUNCTIONS.createOutputSiteContent(config, resultToSend);
-                //Debugging Frontend
-                resultToSend.log = JSON.stringify(structureBotify, null, " ");
-
-                return resultToSend;
-            }
-        }
-    }
-}
 
 async function conversation(body, req, chatId) {
     if (body.action) {
         //L'azione inserita è un sito
         if (body.action.includes('http')) {
-            let resultToSend = openSite(body.action, req, chatId);
+            let resultToSend = await OPENSITE.openSite(body.action, req, chatId);
             return resultToSend;
         }
         //è un'altro tipo di azione, un comando, ex: "list me proposals", chiamo Rasa per fare la validazione
@@ -70,40 +32,11 @@ async function conversation(body, req, chatId) {
                 let resultToSend;
                 // non è un'azione di tipo lista, e' show more
                 if (validation.intent && validation.intent.name == "show_more") {
-                    if (DATA.getExistResult(chatId, req)) {
-                        resultToSend = { action: null };
-                        resultToSend.action = DATA.getResult(chatId, req, nResult);
-                        resultToSend.format = "true";
-                    } else {
-                        resultToSend = { action: "You can't \"show more\" in this moment" };
-                        resultToSend.format = "false";
-                    }
+                    resultToSend = LIST.show_more(chatId, req, nResult);
                 } else if (validation.intent && validation.intent.name == "article_read") {
-                    DATA.clearSession(chatId, req);
-                    //creare oggetto da mandare a conweb_engine per eseguire lettura
-                    resultToSend = { action: "You can't \"read\" in this moment. This functionality is not complete" };
-                    resultToSend.format = "false";
+                    resultToSend = ARTICLE.article_read();
                 } else if (validation.intent && validation.intent.name == "open_element") {
-                    if (validation.position) {
-                        let position = validation.position - 1;
-                        //salva la lista di news trovate e guarda se nella posizione esiste bot-attribute:link
-                        let lastList = DATA.getLastResult(chatId, req);
-                        console.log("position >= 0 && position < lastList.length")
-                        console.log(position >= 0 && position < lastList.length)
-                        console.log("lastList[position].link")
-                        console.log(lastList[position].link)
-                        if (position >= 0 && position < lastList.length && lastList[position].link) {
-                            //link founded, go to open it
-                            resultToSend = openSite(lastList[position].link, req, chatId);
-                            resultToSend.format = "false";
-                        } else {
-                            resultToSend = { action: "You can't open this element" };
-                            resultToSend.format = "false";
-                        }
-                    } else {
-                        resultToSend = { action: "I don't understand what element you want to open" };
-                        resultToSend.format = "false";
-                    }
+                    resultToSend = await LIST.open_element(chatId, req, validation);
                 } else {
                     // è un'azione di tipo lista
                     DATA.clearSession(chatId, req);
@@ -162,4 +95,4 @@ async function conversation(body, req, chatId) {
     }
 }
 
-module.exports = { openSite, conversation };
+module.exports = { conversation };
