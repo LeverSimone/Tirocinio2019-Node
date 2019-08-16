@@ -17,17 +17,7 @@ app.use(session({
 
 const GLOBAL_SETTINGS = require("./global_settings.js");
 const MY_FUNCTIONS = require("./function.js");
-
-//Array in memory per mantenere l'associazione tra la chat e il sito di cui si sta parlando
-var siteTelegram = [];
-//Array in memory per mantenere l'associazione tra la chat e il sito di cui si sta parlando
-var objectRasaURITelegram = [];
-//Array in memory per mantenere l'associazione tra la chat e l'oggetto di risposta di cui si sta parlando
-var resultTelegram = [];
-//Array in memory per mantenere l'associazione tra la chat e l'ultima lista di risposta
-var lastResultTelegram = []
-//Array in memory per mantenere l'associazione tra la chat e la resource di cui si sta parlando
-var resourceTelegram = [];
+const DATA = require("./data.js");
 
 //numero di risultati da ritornare
 const nResult = 5;
@@ -40,52 +30,13 @@ app.get('/', (req, res) => {
     res.json({ status: 'ok' });
 })
 
-function clearSession(chatId, req) {
-    if (chatId) {
-        resultTelegram[chatId] = [];
-        lastResultTelegram[chatId] = [];
-        resourceTelegram[chatId] = null;
-    } else {
-        req.session.result = [];
-        req.session.lastResult = [];
-        req.session.resource = null;
-    }
-}
-
-//Settare contenuto per la sessione per l'end point web e per l'array in memory per Telegram
-function setSession(chatId, valueToSet, req, type) {
-    if (chatId) {
-        if (type == "site")
-            siteTelegram[chatId] = valueToSet;
-        else if (type == "objectLink")
-            objectRasaURITelegram[chatId] = valueToSet;
-        else if (type == "result")
-            resultTelegram[chatId] = valueToSet;
-        else if (type == "lastResult")
-            lastResultTelegram[chatId] = valueToSet;
-        else
-            resourceTelegram[chatId] = valueToSet;
-    } else {
-        if (type == "site")
-            req.session.configurationURI = valueToSet;
-        else if (type == "objectLink")
-            req.session.objectRasaURI = valueToSet;
-        else if (type == "result")
-            req.session.result = valueToSet;
-        else if (type == "lastResult")
-            req.session.lastResult = valueToSet;
-        else
-            req.session.resource = valueToSet;
-    }
-}
-
 //salva il link del sito in sessione e crea una risposta contente gli elementi del sito con le sue resource
 function openSiteResult(chatId, config, req, resultToSend) {
-    setSession(chatId, config.site.id, req, "site");
-    setSession(chatId, config.site.siteObject, req, "objectLink");
+    DATA.setSession(chatId, config.site.id, req, "site");
+    DATA.setSession(chatId, config.site.siteObject, req, "objectLink");
     console.log(req.session.configurationURI)
     console.log(req.session.objectRasaURI)
-    clearSession(chatId, req);
+    DATA.clearSession(chatId, req);
     let resourceFound = "false";
 
     resultToSend.action += "In this site there are: \n";
@@ -155,9 +106,9 @@ async function conversation(body, req, chatId) {
             return resultToSend;
         }
         //è un'altro tipo di azione, un comando, ex: "list me proposals", chiamo Rasa per fare la validazione
-        else if (req.session.configurationURI || siteTelegram[chatId]) {
-            let configurationURI = req.session.configurationURI ? req.session.configurationURI : siteTelegram[chatId];
-            let objectRasaURI = req.session.objectRasaURI ? req.session.objectRasaURI : objectRasaURITelegram[chatId];
+        else if (DATA.getURI(chatId, req)) {
+            let configurationURI = DATA.getURI(chatId, req);
+            let objectRasaURI = DATA.getRasaURI(chatId, req);
 
             //chiamo il server Rasa per fare la validazione dell'input utente
             let validation = await MY_FUNCTIONS.askToValide(body.action, objectRasaURI);
@@ -166,19 +117,20 @@ async function conversation(body, req, chatId) {
                 return { action: validation.error, error: 500 };
             }
             else {
+                console.log(validation);
                 let resultToSend;
-                // non è un'azione di tipo lista, e' read more
+                // non è un'azione di tipo lista, e' show more
                 if (validation.intent.name == "show_more") {
-                    if ((req.session.result && req.session.result.length > 0) || (resultTelegram[chatId] && resultTelegram[chatId].length > 0)) {
+                    if (DATA.getExistResult(chatId, req)) {
                         resultToSend = { action: null };
-                        resultToSend.action = req.session.result ? req.session.result.splice(0, nResult) : resultTelegram[chatId].splice(0, nResult);
+                        resultToSend.action = DATA.getResult(chatId, req, nResult);
                         resultToSend.format = "true";
                     } else {
                         resultToSend = { action: "You can't \"show more\" in this moment" };
                         resultToSend.format = "false";
                     }
                 } else if (validation.intent.name == "article_read") {
-                    clearSession(chatId, req);
+                    DATA.clearSession(chatId, req);
                     //creare oggetto da mandare a conweb_engine per eseguire lettura
                     resultToSend = { action: "You can't \"read\" in this moment. This functionality is not complete" };
                     resultToSend.format = "false";
@@ -186,7 +138,7 @@ async function conversation(body, req, chatId) {
                     if (validation.position) {
                         let position = validation.position - 1;
                         //salva la lista di news trovate e guarda se nella posizione esiste bot-attribute:link
-                        let lastList = req.session.lastResult ? req.session.lastResult : lastResultTelegram[chatId];
+                        let lastList = DATA.getLastResult(chatId, req);
                         if (position >= 0 && position < lastList.length && lastList[position].link) {
                                 //link founded, go to open it
                                 resultToSend = openSite(lastList[position].link, req, chatId);
@@ -201,7 +153,7 @@ async function conversation(body, req, chatId) {
                     }
                 } else {
                     // è un'azione di tipo lista
-                    clearSession(chatId, req);
+                    DATA.clearSession(chatId, req);
                     let objToEngine = MY_FUNCTIONS.newObjToRun(validation, configurationURI);
 
                     if (objToEngine.result == 'false') {
@@ -232,11 +184,11 @@ async function conversation(body, req, chatId) {
                         resultToSend = { action: 'In this site you can\'t ' + objToEngine.intent.substr(0, objToEngine.intent.indexOf('_')) };
                     } else {
                         //tutto è andato a buon fine
-                        setSession(chatId, objToEngine.query.resource.name, req, "resource");
+                        DATA.setSession(chatId, objToEngine.query.resource.name, req, "resource");
                         let resultComplete = await engine.processIntent(objToEngine);
                         let result = resultComplete.splice(0, nResult);
-                        setSession(chatId, resultComplete, req, "result");
-                        setSession(chatId, result, req, "lastResult");
+                        DATA.setSession(chatId, resultComplete, req, "result");
+                        DATA.setSession(chatId, result, req, "lastResult");
                         resultToSend = { action: result };
                         //Debugging Frontend
                         resultToSend.log = JSON.stringify(objToEngine, null, " ");
@@ -292,7 +244,7 @@ app.post('/', async (req, res) => {
                 object.text = "This list is empty";
             }
             else if (resultToSend.format == "true") {
-                resource = req.session.resource ? req.session.resource : resourceTelegram[chatId];
+                resource = DATA.getResource(chatId, req);
                 object.text = "These are " + resultToSend.action.length + " " + resource + "\n\n";
 
                 for (let i = 0; i < resultToSend.action.length; i++) {
