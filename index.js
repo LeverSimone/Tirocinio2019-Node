@@ -168,7 +168,7 @@ async function conversation(body, req, chatId) {
             else {
                 let resultToSend;
                 // non è un'azione di tipo lista, e' read more
-                if (validation.intent == "show_more") {
+                if (validation.intent.name == "show_more") {
                     if ((req.session.result && req.session.result.length > 0) || (resultTelegram[chatId] && resultTelegram[chatId].length > 0)) {
                         resultToSend = { action: null };
                         resultToSend.action = req.session.result ? req.session.result.splice(0, nResult) : resultTelegram[chatId].splice(0, nResult);
@@ -177,12 +177,12 @@ async function conversation(body, req, chatId) {
                         resultToSend = { action: "You can't \"show more\" in this moment" };
                         resultToSend.format = "false";
                     }
-                } else if (validation.intent == "article_read") {
+                } else if (validation.intent.name == "article_read") {
                     clearSession(chatId, req);
                     //creare oggetto da mandare a conweb_engine per eseguire lettura
                     resultToSend = { action: "You can't \"read\" in this moment. This functionality is not complete" };
                     resultToSend.format = "false";
-                } else if (validation.intent == "open_element") {
+                } else if (validation.intent.name == "open_element") {
                     if (validation.position) {
                         let position = validation.position - 1;
                         //salva la lista di news trovate e guarda se nella posizione esiste bot-attribute:link
