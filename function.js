@@ -128,7 +128,32 @@ async function askToValide(comand, configurationURI) {
     }
 }
 
-function newObjToRun(validation, link) {
+//salva il link del sito in sessione e crea una risposta contente gli elementi del sito con le sue resource
+function createOutputSiteContent(config, resultToSend) {
+    let resourceFound = "false";
+
+    resultToSend.action += "In this site there are: \n";
+    config.site.comp_res.forEach((comp_res) => {
+        if (comp_res.component) {
+            if (comp_res.component == "list")
+                resourceFound = comp_res.resources[0];
+            resultToSend.action += comp_res.component;
+            if (comp_res.resources.length > 0) {
+                resultToSend.action += " about: "
+                comp_res.resources.forEach((resource) => {
+                    if (resource)
+                        resultToSend.action += resource + " ";
+                })
+            }
+        }
+        resultToSend.action += "\n";
+    })
+    if (resourceFound != "false")
+        resultToSend.action += "To interact with the site write an action like \"list " + resourceFound + "\"";
+    return resultToSend;
+}
+
+function ObjListToRun(validation, link) {
     let object;
     if (validation.intentNotCompatible) {
         //l'intent non e' compatibile con i componenti del sito
@@ -189,4 +214,4 @@ function newObjToRun(validation, link) {
     }
 }
 
-module.exports = { post, configureValidator, openSitePuppeteer, askToValide, takeConf, newObjToRun };
+module.exports = { post, configureValidator, openSitePuppeteer, askToValide, takeConf, createOutputSiteContent, ObjListToRun };

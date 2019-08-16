@@ -48,6 +48,14 @@ function setSession(chatId, valueToSet, req, type) {
     }
 }
 
+function openSiteData(chatId, req, config) {
+    setSession(chatId, config.site.id, req, "site");
+    setSession(chatId, config.site.siteObject, req, "objectLink");
+    console.log(req.session.configurationURI)
+    console.log(req.session.objectRasaURI)
+    clearSession(chatId, req);
+}
+
 function getURI(chatId, req) {
     if (req.session.configurationURI || siteTelegram[chatId]) {
         let configurationURI = req.session.configurationURI ? req.session.configurationURI : siteTelegram[chatId];
@@ -85,4 +93,4 @@ function getResource(chatId, req) {
     return req.session.resource ? req.session.resource : resourceTelegram[chatId];
 }
 
-module.exports = { clearSession, setSession, getURI, getRasaURI, getLastResult, getExistResult, getResult, getResource  };
+module.exports = { clearSession, setSession, getURI, getRasaURI, getLastResult, getExistResult, getResult, getResource, openSiteData  };
