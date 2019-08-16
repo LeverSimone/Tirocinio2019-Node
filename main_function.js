@@ -122,7 +122,6 @@ async function conversation(body, req, chatId) {
                             resultToSend.action += ": \"" + wordNotFound + "\" but this word is not in the site";
                         //Debugging Frontend
                         resultToSend.log = JSON.stringify(validation, null, " ");
-                        return resultToSend;
                     } else if (objToEngine.result == 'dissambiguation') {
                         //esitono più componenti con la resource inserita dell'utente
                         resultToSend = { action: 'In this site there are many ' + objToEngine.resource + ". Write the same action with one of these words: " };
@@ -131,7 +130,6 @@ async function conversation(body, req, chatId) {
                         }
                         resultToSend.action += objToEngine.category[objToEngine.category.length - 1];
                         resultToSend.log = JSON.stringify(objToEngine, null, " ");
-                        return resultToSend;
                     } else if (objToEngine.result == 'notCompatible') {
                         //l'intent non e' compatibile con i componenti del sito
                         resultToSend = { action: 'In this site you can\'t ' + objToEngine.intent.substr(0, objToEngine.intent.indexOf('_')) };
