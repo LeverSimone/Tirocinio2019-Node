@@ -1,5 +1,3 @@
-const DATA = require("../data.js");
-
 function article_read() {
     let resultToSend;
     //creare oggetto da mandare a conweb_engine per eseguire lettura

@@ -17,7 +17,7 @@ app.use(session({
 const GLOBAL_SETTINGS = require("./global_settings.js");
 const MY_FUNCTIONS = require("./function.js");
 const DATA = require("./data.js");
-const MAIN_FUNCTIONS = require("./main_function.js");
+const MAIN_FUNCTION = require("./main_function.js");
 
 app.use('/', express.static('public'));
 
@@ -49,7 +49,7 @@ app.post('/', async (req, res) => {
 
     } else {
         let body = { action: sentMessage };
-        let resultToSend = await MAIN_FUNCTIONS.conversation(body, req, chatId);
+        let resultToSend = await MAIN_FUNCTION.conversation(body, req, chatId);
 
         if (resultToSend.error) {
             res.status(resultToSend.error).send(resultToSend.action);
@@ -103,7 +103,7 @@ app.post('/', async (req, res) => {
 
 app.post('/conversation', async (req, res) => {
     let body = req.body;
-    let resultToSend = await MAIN_FUNCTIONS.conversation(body, req);
+    let resultToSend = await MAIN_FUNCTION.conversation(body, req);
 
     if (resultToSend.error) {
         res.status(resultToSend.error).send(resultToSend.action);

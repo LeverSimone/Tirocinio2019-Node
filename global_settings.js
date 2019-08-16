@@ -7,4 +7,7 @@ const DESTINATION_URL_PUPPETEER = process.env.HEROKU ? "https://tirocinio2019-pu
 const TELEGRAM_BOT_URL = process.env.BOT_TOKEN ? "https://api.telegram.org/bot"+process.env.BOT_TOKEN+'/sendMessage' : null;
 const TELEGRAM_MAX_MESSAGE = 4096;
 
-module.exports = {PORT, SERVER_URL, DESTINATION_URL_RASA, DESTINATION_URL_PUPPETEER, TELEGRAM_BOT_URL, TELEGRAM_MAX_MESSAGE};
+//numero di risultati da ritornare
+const NRESULT = 5;
+
+module.exports = {PORT, SERVER_URL, DESTINATION_URL_RASA, DESTINATION_URL_PUPPETEER, TELEGRAM_BOT_URL, TELEGRAM_MAX_MESSAGE, NRESULT};
