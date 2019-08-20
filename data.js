@@ -1,6 +1,8 @@
 //Array in memory per mantenere l'associazione tra la chat e il sito di cui si sta parlando
 var siteTelegram = [];
 //Array in memory per mantenere l'associazione tra la chat e il sito di cui si sta parlando
+var lastURITelegram = [];
+//Array in memory per mantenere l'associazione tra la chat e il sito di cui si sta parlando
 var objectRasaURITelegram = [];
 //Array in memory per mantenere l'associazione tra la chat e l'oggetto di risposta di cui si sta parlando
 var resultTelegram = [];
@@ -26,6 +28,8 @@ function setSession(chatId, valueToSet, req, type) {
     if (chatId) {
         if (type == "site")
             siteTelegram[chatId] = valueToSet;
+        else if (type == "lastURI")
+            lastURITelegram[chatId] = valueToSet;
         else if (type == "objectLink")
             objectRasaURITelegram[chatId] = valueToSet;
         else if (type == "result")
@@ -37,6 +41,8 @@ function setSession(chatId, valueToSet, req, type) {
     } else {
         if (type == "site")
             req.session.configurationURI = valueToSet;
+        else if (type == "lastURI")
+            req.session.lastURI = valueToSet;
         else if (type == "objectLink")
             req.session.objectRasaURI = valueToSet;
         else if (type == "result")
@@ -60,6 +66,15 @@ function getURI(chatId, req) {
     if (req.session.configurationURI || siteTelegram[chatId]) {
         let configurationURI = req.session.configurationURI ? req.session.configurationURI : siteTelegram[chatId];
         return configurationURI;
+    } else {
+        return false;
+    }
+}
+
+function getLastURI(chatId, req) {
+    if (req.session.lastURI || lastURITelegram[chatId]) {
+        let lastURI = req.session.lastURI ? req.session.lastURI : lastURITelegram[chatId];
+        return lastURI;
     } else {
         return false;
     }
@@ -93,4 +108,4 @@ function getResource(chatId, req) {
     return req.session.resource ? req.session.resource : resourceTelegram[chatId];
 }
 
-module.exports = { clearSession, setSession, getURI, getRasaURI, getLastResult, getExistResult, getResult, getResource, openSiteData  };
+module.exports = { clearSession, setSession, getURI, getLastURI, getRasaURI, getLastResult, getExistResult, getResult, getResource, openSiteData  };

@@ -3,6 +3,7 @@ const MY_FUNCTIONS = require("./function.js");
 const OPENSITE = require("./opensite.js");
 const LIST = require("./component/list.js");
 const ARTICLE = require("./component/article.js");
+const COMMANDS = require("./component/commands.js");
 const GLOBAL_SETTINGS = require("./global_settings.js");
 
 async function conversation(body, req, chatId) {
@@ -32,7 +33,10 @@ async function conversation(body, req, chatId) {
                     resultToSend = ARTICLE.article_read();
                 } else if (validation.intent && validation.intent.name == "open_element") {
                     resultToSend = await LIST.open_element(chatId, req, validation);
-                } else {
+                } else if (validation.intent && validation.intent.name == "go_back") {
+                    resultToSend = await COMMANDS.go_back(chatId, req);
+                }
+                else {
                     // è un'azione di tipo lista
                     resultToSend = await LIST.list_intent(chatId, req, validation, configurationURI, GLOBAL_SETTINGS.NRESULT);
                 }

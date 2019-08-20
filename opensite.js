@@ -4,6 +4,9 @@ const MY_FUNCTIONS = require("./function.js");
 async function openSite(link, req, chatId) {
     let resultToSend = { action: "Site opened: " + link + " \n" };
 
+    console.log("req.session");
+    console.log(req.session);
+
     //controllo se conosco già il sito
     let config = await MY_FUNCTIONS.takeConf(link);
     if (config.error) {

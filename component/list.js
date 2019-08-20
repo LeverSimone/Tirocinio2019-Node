@@ -25,6 +25,9 @@ async function open_element(chatId, req, validation) {
         let lastList = DATA.getLastResult(chatId, req);
         if (position >= 0 && position < lastList.length && lastList[position].link) {
             //link founded, go to open it
+            //save the old link
+            let lastLink = DATA.getURI(chatId, req);
+            DATA.setSession(chatId, lastLink, req, "lastURI");
             resultToSend = await OPENSITE.openSite(lastList[position].link, req, chatId);
             resultToSend.format = "false";
         } else {
