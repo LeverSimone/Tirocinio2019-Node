@@ -35,6 +35,8 @@ async function conversation(body, req, chatId) {
                     resultToSend = await LIST.open_element(chatId, req, validation);
                 } else if (validation.intent && validation.intent.name == "go_back") {
                     resultToSend = await COMMANDS.go_back(chatId, req);
+                } else if (validation.intent && validation.intent.name == "go_site") {
+                    resultToSend = await COMMANDS.go_site(chatId, req, validation);
                 }
                 else {
                     // è un'azione di tipo lista

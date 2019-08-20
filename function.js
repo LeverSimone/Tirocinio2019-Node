@@ -214,4 +214,4 @@ function ObjListToRun(validation, link) {
     }
 }
 
-module.exports = { post, configureValidator, openSitePuppeteer, askToValide, takeConf, createOutputSiteContent, ObjListToRun };
+module.exports = { get, post, configureValidator, openSitePuppeteer, askToValide, takeConf, createOutputSiteContent, ObjListToRun };
