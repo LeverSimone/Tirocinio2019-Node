@@ -15,7 +15,13 @@
 
   <script>
     function viewRenderingSearch(data) {
+      if (data.firsText) {
+        $("#search-result").append("<pre><code>" + data.firsText + "</code></pre>");
+      }
       $("#search-result").append("<pre><code>" + data.action + "</code></pre>");
+      if (data.otherText) {
+        $("#search-result").append("<pre><code>" + data.otherText + "</code></pre>");
+      }
       if (data.log) {
         $("#search-result").append("<pre><code style=\"color: #0059b3\">" + data.log + "</code></pre><br>");
       }

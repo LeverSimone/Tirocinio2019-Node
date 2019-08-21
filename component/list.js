@@ -68,6 +68,7 @@ async function list_intent(chatId, req, validation, configurationURI, nResult) {
         }
         resultToSend.action += objToEngine.category[objToEngine.category.length - 1];
         resultToSend.log = JSON.stringify(objToEngine, null, " ");
+        resultToSend.action += ". For example write: \"list \"" + objToEngine.category[0];
     } else if (objToEngine.result == 'notCompatible') {
         //l'intent non e' compatibile con i componenti del sito
         resultToSend = { action: 'In this site you can\'t ' + objToEngine.intent.substr(0, objToEngine.intent.indexOf('_')) };
@@ -86,6 +87,12 @@ async function list_intent(chatId, req, validation, configurationURI, nResult) {
             resultToSend.format = objToEngine.query.intent;
         else
             resultToSend.format = "true";
+        
+        resultToSend.firsText = "These are " + resultToSend.action.length + " " + objToEngine.query.resource.name + "\n\n";
+        if (DATA.getLengthResult(chatId, req))
+        {
+            resultToSend.otherText = "Do you want to know more? Write \"show more\"\nDo you want to open an element? Write for example: \"open element 2\"";
+        }
     }
 
     return resultToSend;

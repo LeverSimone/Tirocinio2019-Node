@@ -43,7 +43,7 @@ app.post('/', async (req, res) => {
 
     if (sentMessage == '/start') {
 
-        let object = { chat_id: chatId, text: 'Open a site with an URL and then write an action' };
+        let object = { chat_id: chatId, text: 'Open a site with an URL and then write an action.\nYou can also open a site writing \"go to cnn\" for example, this is avaiable only for the known site' };
         let responseBot = await MY_FUNCTIONS.post(object, GLOBAL_SETTINGS.TELEGRAM_BOT_URL, 'application/json');
         res.sendStatus(200);
 
@@ -60,9 +60,7 @@ app.post('/', async (req, res) => {
                 object.text = "This list is empty";
             }
             else if (resultToSend.format == "true") {
-                resource = DATA.getResource(chatId, req);
-                object.text = "These are " + resultToSend.action.length + " " + resource + "\n\n";
-
+                object.text = resultToSend.firsText;
                 for (let i = 0; i < resultToSend.action.length; i++) {
                     if (resultToSend.action[i].title || resultToSend.action[i].key) {
                         let temp = resultToSend.action[i].title ? resultToSend.action[i].title : resultToSend.action[i].key;
@@ -77,8 +75,8 @@ app.post('/', async (req, res) => {
                     object.text += "\n";
                 }
 
-                if (DATA.getLenghtResultTelegram(chatId) != 0)
-                    object.text += "Do you want to know more? Write \"show more\"\nDo you want to open an element? Write for example: \"open element 2\"";
+                if (DATA.getLengthResult(chatId, req))
+                    object.text += resultToSend.otherText;
 
             } else if (resultToSend.format == "list_about") {
                 object.text = "";
