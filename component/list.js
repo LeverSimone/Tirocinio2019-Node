@@ -10,6 +10,13 @@ function show_more(chatId, req, nResult) {
         resultToSend = { action: null };
         resultToSend.action = DATA.getResult(chatId, req, nResult);
         resultToSend.format = "true";
+        resultToSend.firsText = "These are " + resultToSend.action.length + " " + DATA.getResource(chatId, req) + "\n\n";
+        resultToSend.otherText = "";
+        if (DATA.getLengthResult(chatId, req))
+        {
+            resultToSend.otherText = "Do you want to know more? Write \"show more\"\n";
+        }
+        resultToSend.otherText += "Do you want to open an element? Write for example: \"open element 2\"";
     } else {
         resultToSend = { action: "You can't \"show more\" in this moment" };
         resultToSend.format = "false";
@@ -89,10 +96,12 @@ async function list_intent(chatId, req, validation, configurationURI, nResult) {
             resultToSend.format = "true";
         
         resultToSend.firsText = "These are " + resultToSend.action.length + " " + objToEngine.query.resource.name + "\n\n";
+        resultToSend.otherText = "";
         if (DATA.getLengthResult(chatId, req))
         {
-            resultToSend.otherText = "Do you want to know more? Write \"show more\"\nDo you want to open an element? Write for example: \"open element 2\"";
+            resultToSend.otherText = "Do you want to know more? Write \"show more\"\n";
         }
+        resultToSend.otherText += "Do you want to open an element? Write for example: \"open element 2\"";
     }
 
     return resultToSend;
