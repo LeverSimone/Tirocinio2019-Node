@@ -75,8 +75,7 @@ app.post('/', async (req, res) => {
                     object.text += "\n";
                 }
 
-                if (DATA.getLengthResult(chatId, req))
-                    object.text += resultToSend.otherText;
+                object.text += resultToSend.otherText;
 
             } else if (resultToSend.format == "list_about") {
                 object.text = "";
