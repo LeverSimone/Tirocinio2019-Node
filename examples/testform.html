@@ -1,0 +1,66 @@
+
+<!DOCTYPE html>
+<html lang=it>
+
+<head>
+
+    <meta charset="utf-8">
+    <title> Example List </title>
+
+</head>
+
+<body>
+
+    <h2>conweb-engine HTML Forms</h2>
+
+    <form id="du" name="datiUtente" bot-resource="datiUtente" bot-type="datiUtente" onsubmit="myFunction()" method="GET">
+        First name:<br>
+        <input type="text" bot-attribute="firstname" id="firstName">
+        <br>
+        Last name:<br>
+        <input type="text" bot-attribute="lastname" id="lastName">
+        <br>
+        Telephone: <br>
+        <input type="tel" bot-attribute="phone" id="phone" pattern="[0-9]{3}[-]{0,1}[0-9]{3}[-]{0,1}[0-9]{4}"> Format: xxx-xxx-xxxx
+        <br>
+        E-mail:<br>
+        <input type="email" bot-attribute="ema" id="email">
+        <br>
+        Password:<br>
+        <input type="password" bot-attribute="psw" id="psw" required>
+        <br>
+        Birthday:<br>
+        <input type="date" bot-attribute="bday" id="bday">
+        <br><br>
+        <select name="gender" bot-attribute="gender" id="gender">
+            <option value="notSay">Prefer not to say</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+        </select>
+        <br><br>
+        Occupation:<br>
+        <input type="checkbox" name="occupation1" bot-attribute="occupation1" id="occupation1" value="Student">Student<br>
+        <input type="checkbox" name="occupation2" bot-attribute="occupation2" id="occupation2" value="Worker">Worker<br>
+        <br>
+        <input type="radio" name="remember" bot-attribute="remember" id="remember" value="Yes">Remember me<br>
+        <br>
+        <input type="submit" value="Submit">
+        <input type="reset">
+    </form>
+
+    <script>
+    function myFunction() {
+        var message = "First name: " + document.getElementById("firstName").value;
+        message += "\nLast name: " + document.getElementById("lastName").value;
+        message += "\nPhone: " + (document.getElementById("phone").value).toString();
+        message += "\nEmail: " + document.getElementById("email").value;
+        message += "\nPassword: " + document.getElementById("psw").value;
+        message += "\nBirthday: " + document.getElementById("bday").value;
+        message += "\nGender: " + document.getElementById("gender").value;
+        alert(message);
+    }
+    </script>
+
+</body>
+
+    </html>
