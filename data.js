@@ -10,16 +10,24 @@ var resultTelegram = [];
 var lastResultTelegram = []
 //Array in memory per mantenere l'associazione tra la chat e la resource di cui si sta parlando
 var resourceTelegram = [];
+//Array in memory per mantenere l'associazione tra la chat e il componente di cui si sta parlando
+var componentTelegram = [];
+//Array in memory per mantenere l'associazione tra la chat e l'indice degll'attributo del form
+var indexFormTelegram = [];
 
 function clearSession(chatId, req) {
     if (chatId) {
         resultTelegram[chatId] = [];
         lastResultTelegram[chatId] = [];
         resourceTelegram[chatId] = null;
+        componentTelegram[chatId] = null;
+        indexFormTelegram[chatId] = null;
     } else {
         req.session.result = [];
         req.session.lastResult = [];
         req.session.resource = null;
+        req.session.component = null;
+        req.session.indexForm = null;
     }
 }
 
@@ -36,6 +44,10 @@ function setSession(chatId, valueToSet, req, type) {
             resultTelegram[chatId] = valueToSet;
         else if (type == "lastResult")
             lastResultTelegram[chatId] = valueToSet;
+        else if (type == "component")
+            componentTelegram[chatId] = valueToSet;
+        else if (type == "indexForm")
+            indexFormTelegram[chatId] = valueToSet;
         else
             resourceTelegram[chatId] = valueToSet;
     } else {
@@ -49,6 +61,10 @@ function setSession(chatId, valueToSet, req, type) {
             req.session.result = valueToSet;
         else if (type == "lastResult")
             req.session.lastResult = valueToSet;
+        else if (type == "component")
+            req.session.component = valueToSet;
+        else if (type == "indexForm")
+            req.session.indexForm = valueToSet;
         else
             req.session.resource = valueToSet;
     }
@@ -112,4 +128,18 @@ function getResource(chatId, req) {
     return req.session.resource ? req.session.resource : resourceTelegram[chatId];
 }
 
-module.exports = { clearSession, setSession, getURI, getLastURI, getRasaURI, getLastResult, getExistResult, getResult, getLengthResult, getResource, openSiteData  };
+function getComponent(chatId, req) {
+    if (req.session.component || componentTelegram[chatId]) {
+        let component = req.session.component ? req.session.component : componentTelegram[chatId];
+        return component
+    } else {
+        return false;
+    }
+}
+
+function getIndexForm(chatId, req) {
+    let indexForm = req.session.indexForm ? req.session.indexForm : indexFormTelegram[chatId];
+    return indexForm;
+}
+
+module.exports = { clearSession, setSession, getURI, getLastURI, getRasaURI, getLastResult, getExistResult, getResult, getLengthResult, getResource, openSiteData, getComponent, getIndexForm };
