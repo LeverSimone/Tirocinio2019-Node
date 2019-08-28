@@ -1,8 +1,11 @@
 const DATA = require("./data.js");
 const MY_FUNCTIONS = require("./function.js");
 
-async function openSite(link, req, chatId) {
-    let resultToSend = { action: "Site opened: " + link + " \n" };
+async function openSite(link, req, chatId, otherText) {
+    let text = ""
+    if (otherText)
+        text = otherText
+    let resultToSend = { action: text+"Site opened: " + link + " \n" };
 
     //controllo se conosco già il sito
     let config = await MY_FUNCTIONS.takeConf(link);
