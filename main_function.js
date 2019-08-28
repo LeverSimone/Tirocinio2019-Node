@@ -9,12 +9,13 @@ const GLOBAL_SETTINGS = require("./global_settings.js");
 
 async function conversation(body, req, chatId) {
     if (body.action) {
+        let resultToSend = null;
         //L'azione inserita è un sito
         if (body.action.includes('http')) {
-            let resultToSend = await OPENSITE.openSite(body.action, req, chatId);
+            resultToSend = await OPENSITE.openSite(body.action, req, chatId);
             return resultToSend;
         }
-        if (!DATA.getComponent(chatId, req)) {
+        else if (!DATA.getComponent(chatId, req)) {
             //non è già in esecuzione un form
 
             //è un'altro tipo di azione, un comando, ex: "list me proposals"
@@ -26,7 +27,6 @@ async function conversation(body, req, chatId) {
                 return { action: validation.error, error: 500 };
             }
             if (DATA.getURI(chatId, req) || validation.intent.name == "go_site") {
-                let resultToSend;
                 // non è un'azione di tipo lista, e' show more
                 if (validation.intent && validation.intent.name == "show_more") {
                     resultToSend = LIST.show_more(chatId, req, GLOBAL_SETTINGS.NRESULT);
@@ -45,7 +45,6 @@ async function conversation(body, req, chatId) {
                     // è un'azione di tipo lista
                     resultToSend = await LIST.list_intent(chatId, req, validation, configurationURI, GLOBAL_SETTINGS.NRESULT);
                 }
-                return resultToSend;
             }
             else {
                 return { action: "You have to open a site before doing an action" };
@@ -53,7 +52,9 @@ async function conversation(body, req, chatId) {
         } else {
             //è già in esecuzione l'inserimento di valori in un form
             resultToSend = await FORM.form_continue(chatId, req, body.action);
+            
         }
+        return resultToSend;
     }
     else {
         return { action: "Action is empty'", error: 400 };

@@ -30,7 +30,7 @@ function form_go(chatId, req, validation, configurationURI) {
         //resultToSend = { action: resultComplete }
 
         DATA.setSession(chatId, "form", req, "component");
-        DATA.setSession(chatId, 0, req, "indexForm");
+        DATA.setSession(chatId, "0", req, "indexForm");
         DATA.setSession(chatId, objToEngine, req, "lastResult");
 
         let text = objToEngine.query.resource.name + " form opened.\nInsert " + objToEngine.query.resource.attributes[0].name + ":";
@@ -45,14 +45,22 @@ function form_go(chatId, req, validation, configurationURI) {
 
 async function form_continue(chatId, req, insertedValue) {
     let resultToSend;
-    let indexForm = DATA.getIndexForm(chatId, req);
+    let indexForm = parseInt(DATA.getIndexForm(chatId, req), 10);
     let objToEngine = DATA.getLastResult(chatId, req);
+    
+    console.log(objToEngine.query.resource.attributes);
+    console.log("indexForm")
+    console.log(indexForm)
+    console.log("objToEngine.query.resource.attributes[indexForm]");
+    console.log(objToEngine.query.resource.attributes[indexForm]);
 
     objToEngine.query.resource.attributes[indexForm].value = insertedValue;
+    indexForm+=1
+    DATA.setSession(chatId, indexForm+"", req, "indexForm");
 
     //controllo se ci sono altri valori da inserire
-    if(objToEngine.query.resource.attributes[indexForm+1]) {
-        let text = "Insert " + objToEngine.query.resource.attributes[indexForm+1].name + ":";
+    if(objToEngine.query.resource.attributes[indexForm]) {
+        let text = "Insert " + objToEngine.query.resource.attributes[indexForm].name + ":";
         resultToSend = { action: text }
     } else {
         let resultComplete = await engine.processIntent(objToEngine);
