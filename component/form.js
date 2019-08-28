@@ -47,32 +47,45 @@ async function form_continue(chatId, req, insertedValue) {
     let resultToSend;
     let indexForm = parseInt(DATA.getIndexForm(chatId, req), 10);
     let objToEngine = DATA.getLastResult(chatId, req);
-    
+
     console.log(objToEngine.query.resource.attributes);
     console.log("indexForm")
     console.log(indexForm)
     console.log("objToEngine.query.resource.attributes[indexForm]");
     console.log(objToEngine.query.resource.attributes[indexForm]);
 
-    objToEngine.query.resource.attributes[indexForm].value = insertedValue;
-    indexForm+=1
-    DATA.setSession(chatId, indexForm+"", req, "indexForm");
+    //fine form
+    if (indexForm == 10000) {
+        if (insertedValue == "yes" || insertedValue == "Yes") {
+            let resultComplete = await engine.processIntent(objToEngine);
+            resultToSend = { action: resultComplete }
+            resultToSend.firsText = "Submit done";
+            DATA.clearSession(chatId, req);
+            //ricevere nuovo link da conweb-engine e aprire pagina
+        } else {
+            resultToSend = { action: "Submit canceled" };
+            DATA.clearSession(chatId, req);
+        }
+    } else { //inserisce i valori
+        objToEngine.query.resource.attributes[indexForm].value = insertedValue;
+        indexForm += 1
+        DATA.setSession(chatId, indexForm + "", req, "indexForm");
 
-    //controllo se ci sono altri valori da inserire
-    if(objToEngine.query.resource.attributes[indexForm]) {
-        let text = "Insert " + objToEngine.query.resource.attributes[indexForm].name + ":";
-        resultToSend = { action: text }
-    } else {
-        let resultComplete = await engine.processIntent(objToEngine);
-        resultToSend = { action: resultComplete }
-        resultToSend.firsText = "Submit done";
+        //controllo se ci sono altri valori da inserire
+        if (objToEngine.query.resource.attributes[indexForm]) {
+            let text = "Insert " + objToEngine.query.resource.attributes[indexForm].name + ":";
+            resultToSend = { action: text }
+        } else if (indexForm < 10000) {
+            resultToSend = { action: "Do you want to submit? yes or no" };
+            DATA.setSession(chatId, "10000", req, "indexForm");
+        }
     }
 
     resultToSend.format = "false";
     return resultToSend;
 }
 
-function objFormToRun (validation, link) {
+function objFormToRun(validation, link) {
     let object;
     if (validation.intentNotCompatible) {
         //l'intent non e' compatibile con i componenti del sito
@@ -102,7 +115,7 @@ function objFormToRun (validation, link) {
                 object.query.resource.type = entities.match.resource;
                 //inserisco tutti gli attributes compatibili con la risorsa inserita
                 entities.match.attributes.forEach(attributes => {
-                    object.query.resource.attributes.push({ name: attributes.name, selector: attributes.selector, type: attributes.type, value: null});
+                    object.query.resource.attributes.push({ name: attributes.name, selector: attributes.selector, type: attributes.type, value: null });
                 });
             }
         });

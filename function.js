@@ -132,6 +132,7 @@ async function askToValide(comand, configurationURI) {
 function createOutputSiteContent(config, resultToSend) {
     let resourceFound = "false";
     let article = false
+    let form = "false"
     resultToSend.action += "In this site there are: \n";
     config.site.comp_res.forEach((comp_res) => {
         if (comp_res.component) {
@@ -139,6 +140,8 @@ function createOutputSiteContent(config, resultToSend) {
                 resourceFound = comp_res.resources[0];
             if (comp_res.component == "article")
                 article = true
+            if (comp_res.component == "form")
+                form = comp_res.resources[0];
             resultToSend.action += comp_res.component;
             if (comp_res.resources.length > 0) {
                 resultToSend.action += " about: "
@@ -151,9 +154,11 @@ function createOutputSiteContent(config, resultToSend) {
         resultToSend.action += "\n";
     })
     if (resourceFound != "false")
-        resultToSend.action += "To interact with the site write an action like \"list " + resourceFound + "\"";
+        resultToSend.action += "To interact with the list write an action like \"list " + resourceFound + "\"\n";
     if (article)
         resultToSend.action += "You can read the article with \"read\"";
+    if (form != "false")
+        resultToSend.action += "To interact with the forms write an action like \"go to " + form + " form\" \n";
     return resultToSend;
 }
 
