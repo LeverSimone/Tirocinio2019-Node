@@ -49,7 +49,6 @@ async function form_continue(chatId, req, insertedValue) {
     let indexForm = parseInt(DATA.getIndexForm(chatId, req), 10);
     let objToEngine = DATA.getLastResult(chatId, req);
 
-    console.log(objToEngine.query.resource.attributes);
     console.log("indexForm")
     console.log(indexForm)
     //console.log("objToEngine.query.resource.attributes[indexForm]");
@@ -86,6 +85,7 @@ async function form_continue(chatId, req, insertedValue) {
             resultToSend = { action: text }
         } else if (indexForm < 10000) {
             resultToSend = { action: "Do you want to submit? yes or no" };
+            resultToSend.log = JSON.stringify(objToEngine, null, " ");
             DATA.setSession(chatId, "10000", req, "indexForm");
         }
     }
