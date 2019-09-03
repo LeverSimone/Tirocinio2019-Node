@@ -23,6 +23,7 @@ async function conversation(body, req, chatId) {
             let configurationURI = DATA.getURI(chatId, req);
             let objectRasaURI = DATA.getRasaURI(chatId, req);
             let validation = await MY_FUNCTIONS.askToValide(body.action, objectRasaURI);
+            console.log(validation);
             if (validation.error) {
                 return { action: validation.error, error: 500 };
             }
@@ -31,7 +32,7 @@ async function conversation(body, req, chatId) {
                 if (validation.intent && validation.intent.name == "show_more") {
                     resultToSend = LIST.show_more(chatId, req, GLOBAL_SETTINGS.NRESULT);
                 } else if (validation.intent && validation.intent.name == "article_read") {
-                    resultToSend = ARTICLE.article_read();
+                    resultToSend = ARTICLE.article_read(chatId, req, validation, configurationURI);
                 } else if (validation.intent && validation.intent.name == "open_element") {
                     resultToSend = await LIST.open_element(chatId, req, validation);
                 } else if (validation.intent && validation.intent.name == "go_back") {
@@ -42,7 +43,7 @@ async function conversation(body, req, chatId) {
                     resultToSend = FORM.form_go(chatId, req, validation, configurationURI);
                 }
                 else {
-                    // è un'azione di tipo lista
+                    // è un'azione di tipo lista o l'intent non è compatibile
                     resultToSend = await LIST.list_intent(chatId, req, validation, configurationURI, GLOBAL_SETTINGS.NRESULT);
                 }
             }
