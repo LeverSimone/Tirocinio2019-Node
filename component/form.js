@@ -69,7 +69,7 @@ async function form_continue(chatId, req, insertedValue) {
                 resultToSend = { action: "Submit done!" }
                 resultToSend.log = JSON.stringify(resultComplete, null, " ");
             }
-
+            
         } else {
             resultToSend = { action: "Submit canceled" };
             DATA.clearSession(chatId, req);
@@ -84,10 +84,13 @@ async function form_continue(chatId, req, insertedValue) {
             let text = "Insert " + objToEngine.query.resource.attributes[indexForm].name + ":";
             resultToSend = { action: text }
         } else if (indexForm < 10000) {
+            //valori da inserire finiti
             resultToSend = { action: "Do you want to submit? yes or no" };
             resultToSend.log = JSON.stringify(objToEngine, null, " ");
             DATA.setSession(chatId, "10000", req, "indexForm");
         }
+
+        DATA.setSession(chatId, objToEngine, req, "lastResult");
     }
 
     resultToSend.format = "false";

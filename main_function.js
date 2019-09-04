@@ -23,7 +23,6 @@ async function conversation(body, req, chatId) {
             let configurationURI = DATA.getURI(chatId, req);
             let objectRasaURI = DATA.getRasaURI(chatId, req);
             let validation = await MY_FUNCTIONS.askToValide(body.action, objectRasaURI);
-            console.log(validation);
             if (validation.error) {
                 return { action: validation.error, error: 500 };
             }

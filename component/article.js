@@ -22,7 +22,6 @@ function objArticleReadToRun(validation, link) {
             }
         }
     };
-    //setto che tutto è andato a buon fine
     console.log(object)
     console.log(object.query.resource.attributes)
     return object;
