@@ -1,10 +1,14 @@
-function article_read(chatId, req, validation, configurationURI) {
+const engine = require('conweb-engine/components/engine');
+
+async function article_read(chatId, req, validation, configurationURI) {
     let resultToSend;
-    //creare oggetto da mandare a conweb_engine per eseguire lettura
+    //crea oggetto da mandare a conweb_engine per eseguire lettura
     let objToEngine = objArticleReadToRun(validation, configurationURI);
-    resultToSend = { action: "You can't \"read\" in this moment. This functionality is not complete" };
+    //resultToSend = { action: "You can't \"read\" in this moment. This functionality is not complete" };
+    let resultComplete = await engine.processIntent(objToEngine);
+    resultToSend = { action: resultComplete };
     resultToSend.log = JSON.stringify(objToEngine, null, " ");;
-    resultToSend.format = "false";
+    resultToSend.format = "article";
     return resultToSend;
 }
 
@@ -15,7 +19,7 @@ function objArticleReadToRun(validation, link) {
         url: link,
         component: "article",
         query: {
-            intent: "article_read",
+            intent: "article_sum",
             resource: {
                 selector: validation.title,
                 attributes: validation.text

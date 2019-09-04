@@ -31,7 +31,7 @@ async function conversation(body, req, chatId) {
                 if (validation.intent && validation.intent.name == "show_more") {
                     resultToSend = LIST.show_more(chatId, req, GLOBAL_SETTINGS.NRESULT);
                 } else if (validation.intent && validation.intent.name == "article_read") {
-                    resultToSend = ARTICLE.article_read(chatId, req, validation, configurationURI);
+                    resultToSend = await ARTICLE.article_read(chatId, req, validation, configurationURI);
                 } else if (validation.intent && validation.intent.name == "open_element") {
                     resultToSend = await LIST.open_element(chatId, req, validation);
                 } else if (validation.intent && validation.intent.name == "go_back") {

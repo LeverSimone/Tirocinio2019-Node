@@ -59,8 +59,11 @@ app.post('/', async (req, res) => {
             if (resultToSend.action.length == 0) {
                 object.text = "This list is empty";
             }
-            else if (resultToSend.format == "true") {
-                object.text = resultToSend.firsText;
+            else if (resultToSend.format == "true" || resultToSend.format == "article") {
+                object.text = "";
+                if (resultToSend.firsText) {
+                    object.text = resultToSend.firsText;
+                }
                 for (let i = 0; i < resultToSend.action.length; i++) {
                     if (resultToSend.action[i].title || resultToSend.action[i].key) {
                         let temp = resultToSend.action[i].title ? resultToSend.action[i].title : resultToSend.action[i].key;
@@ -69,13 +72,18 @@ app.post('/', async (req, res) => {
                     }
                     for (var key in resultToSend.action[i]) {
                         if (resultToSend.action[i].hasOwnProperty(key) && key != "title" && key != "key" && resultToSend.action[i][key]) {
-                            object.text += key + ": " + resultToSend.action[i][key] + "\n";
+                            if (resultToSend.format == "article") {
+                                object.text += "\n" + resultToSend.action[i][key] + "\n";
+                            } else {
+                                object.text += key + ": " + resultToSend.action[i][key] + "\n";
+                            }
                         }
                     }
                     object.text += "\n";
                 }
-
-                object.text += resultToSend.otherText;
+                if (resultToSend.firsText) {
+                    object.text += resultToSend.otherText;
+                }
 
             } else if (resultToSend.format == "list_about") {
                 object.text = "";
