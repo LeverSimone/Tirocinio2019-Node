@@ -43,7 +43,13 @@ app.post('/', async (req, res) => {
 
     if (sentMessage == '/start') {
 
-        let object = { chat_id: chatId, text: 'Open a site with an URL and then write an action.\nYou can also open a site writing \"go to cnn\" for example, this is avaiable only for the known site' };
+        let object = { chat_id: chatId, text: 'Open a site with an URL and then write an action.\nYou can also open a site writing \"go to cnn\" for example, this is avaiable only for the known site. To see the list of known site write: \"/prefs\"' };
+        let responseBot = await MY_FUNCTIONS.post(object, GLOBAL_SETTINGS.TELEGRAM_BOT_URL, 'application/json');
+        res.sendStatus(200);
+
+    } else if (sentMessage == '/prefs') {
+
+        let object = { chat_id: chatId, text: 'These are the site known by the system:\nCNN\nTwitter\nGoogle ' };
         let responseBot = await MY_FUNCTIONS.post(object, GLOBAL_SETTINGS.TELEGRAM_BOT_URL, 'application/json');
         res.sendStatus(200);
 
