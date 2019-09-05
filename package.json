@@ -19,7 +19,7 @@
   "homepage": "https://github.com/LeverSimone/Tirocinio2019-Node#readme",
   "dependencies": {
     "body-parser": "^1.18.3",
-    "conweb-engine": "github:TrentoCrowdAI/conweb-engine#develop",
+    "conweb-engine": "github:TrentoCrowdAI/conweb-engine#waitForNavigation",
     "cookie-parser": "^1.4.4",
     "express": "^4.16.4",
     "express-session": "^1.15.6",
