@@ -75,7 +75,7 @@ async function list_intent(chatId, req, validation, configurationURI, nResult) {
         }
         resultToSend.action += objToEngine.category[objToEngine.category.length - 1];
         resultToSend.log = JSON.stringify(objToEngine, null, " ");
-        resultToSend.action += ". For example write: \"list \"" + objToEngine.category[0];
+        resultToSend.action += ". For example write: \"list " + objToEngine.category[0] + "\"";
     } else if (objToEngine.result == 'notCompatible') {
         //l'intent non e' compatibile con i componenti del sito
         resultToSend = { action: 'In this site you can\'t ' + objToEngine.intent.substr(0, objToEngine.intent.indexOf('_')) };
