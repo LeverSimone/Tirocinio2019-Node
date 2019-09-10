@@ -71,6 +71,9 @@ app.post('/', async (req, res) => {
                     object.text = resultToSend.firsText;
                 }
                 for (let i = 0; i < resultToSend.action.length; i++) {
+                    if(resultToSend.format == "true") {
+                        object.text += "<b>" + (i+1) + ") " + "</b>";
+                    }
                     if (resultToSend.action[i].title || resultToSend.action[i].key) {
                         let temp = resultToSend.action[i].title ? resultToSend.action[i].title : resultToSend.action[i].key;
                         let titleNoSpace = temp.replace(/\n/g, '')
@@ -88,6 +91,7 @@ app.post('/', async (req, res) => {
                     object.text += "\n";
                 }
                 if (resultToSend.firsText) {
+                    object.text += "--- What you can do ---\n";
                     object.text += resultToSend.otherText;
                 }
 

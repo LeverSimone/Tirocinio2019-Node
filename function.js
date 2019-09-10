@@ -133,7 +133,7 @@ function createOutputSiteContent(config, resultToSend) {
     let resourceFound = "false";
     let article = false
     let form = "false"
-    resultToSend.action += "In this site there are: \n";
+    resultToSend.action += "\nIn this site there are: \n";
     config.site.comp_res.forEach((comp_res) => {
         if (comp_res.component) {
             if (comp_res.component == "list")
@@ -153,6 +153,7 @@ function createOutputSiteContent(config, resultToSend) {
         }
         resultToSend.action += "\n";
     })
+    resultToSend.action += "\n";
     if (resourceFound != "false")
         resultToSend.action += "To interact with the list write an action like \"list " + resourceFound + "\"\n";
     if (article)
