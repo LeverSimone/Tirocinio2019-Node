@@ -8,6 +8,6 @@ const TELEGRAM_BOT_URL = process.env.BOT_TOKEN ? "https://api.telegram.org/bot"+
 const TELEGRAM_MAX_MESSAGE = 4096;
 
 //numero di risultati da ritornare
-const NRESULT = 5;
+const NRESULT = 3;
 
 module.exports = {PORT, SERVER_URL, DESTINATION_URL_RASA, DESTINATION_URL_PUPPETEER, TELEGRAM_BOT_URL, TELEGRAM_MAX_MESSAGE, NRESULT};

@@ -49,48 +49,29 @@ async function form_continue(chatId, req, insertedValue) {
     let indexForm = parseInt(DATA.getIndexForm(chatId, req), 10);
     let objToEngine = DATA.getLastResult(chatId, req);
 
-    console.log("indexForm")
-    console.log(indexForm)
-    //console.log("objToEngine.query.resource.attributes[indexForm]");
-    //console.log(objToEngine.query.resource.attributes[indexForm]);
+    //inserisce i valori
+    objToEngine.query.resource.attributes[indexForm].value = insertedValue;
+    indexForm += 1
+    DATA.setSession(chatId, indexForm + "", req, "indexForm");
+    DATA.setSession(chatId, objToEngine, req, "lastResult");
 
-    //fine form
-    if (indexForm == 10000) {
-        if (insertedValue == "yes" || insertedValue == "Yes") {
-            let resultComplete = await engine.processIntent(objToEngine);
-            console.log(resultComplete)
+    //controllo se ci sono altri valori da inserire
+    if (objToEngine.query.resource.attributes[indexForm]) {
+        let text = "Insert " + objToEngine.query.resource.attributes[indexForm].name + ":";
+        resultToSend = { action: text }
+    } else {
+        let resultComplete = await engine.processIntent(objToEngine);
+        console.log(resultComplete)
 
-            DATA.clearSession(chatId, req);
-            let actualLink = DATA.getURI(chatId, req);
+        DATA.clearSession(chatId, req);
+        let actualLink = DATA.getURI(chatId, req);
 
-            if (resultComplete.link != actualLink)
-                resultToSend = await OPENSITE.openSite(resultComplete.link, req, chatId, "Submit done!\n");
-            else {
-                resultToSend = { action: "Submit done!" }
-                resultToSend.log = JSON.stringify(resultComplete, null, " ");
-            }
-            
-        } else {
-            resultToSend = { action: "Submit canceled" };
-            DATA.clearSession(chatId, req);
+        if (resultComplete.link != actualLink)
+            resultToSend = await OPENSITE.openSite(resultComplete.link, req, chatId, "Submit done!\n");
+        else {
+            resultToSend = { action: "Submit done!" }
+            resultToSend.log = JSON.stringify(resultComplete, null, " ");
         }
-    } else { //inserisce i valori
-        objToEngine.query.resource.attributes[indexForm].value = insertedValue;
-        indexForm += 1
-        DATA.setSession(chatId, indexForm + "", req, "indexForm");
-
-        //controllo se ci sono altri valori da inserire
-        if (objToEngine.query.resource.attributes[indexForm]) {
-            let text = "Insert " + objToEngine.query.resource.attributes[indexForm].name + ":";
-            resultToSend = { action: text }
-        } else if (indexForm < 10000) {
-            //valori da inserire finiti
-            resultToSend = { action: "Do you want to submit? yes or no" };
-            resultToSend.log = JSON.stringify(objToEngine, null, " ");
-            DATA.setSession(chatId, "10000", req, "indexForm");
-        }
-
-        DATA.setSession(chatId, objToEngine, req, "lastResult");
     }
 
     resultToSend.format = "false";
